@@ -13,6 +13,21 @@ type Row = Pick<PublicEventRow, 'event' | 'venue'> & { next: string };
 
 const dayHeading = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
+/** The weekend and each kind of event, as a row of links to their pages: the way into What's on by what, not by filter. */
+export function KindPills({ current }: { current?: string }) {
+  const pill = (href: string, label: string) => (
+    <Link key={href} href={href} aria-current={current === href ? 'page' : undefined} className={`shrink-0 rounded-full px-3 py-1 text-sm ring-1 ${current === href ? 'bg-brand text-white ring-brand' : 'bg-white text-harbour ring-harbour/15 hover:text-brand'}`}>
+      {label}
+    </Link>
+  );
+  return (
+    <nav aria-label="Kinds of event" className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      {pill(WEEKEND_PATH, 'This weekend')}
+      {LANDING_TYPES.map((t) => pill(typePath(t), t))}
+    </nav>
+  );
+}
+
 /**
  * A What's on landing page: a kind of event, or the weekend. Its
  * highlights, then its events by month (each heading leading to that
@@ -36,11 +51,6 @@ export function EventLanding(props: {
     const key = props.by === 'month' ? r.next.slice(0, 7) : r.next;
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
-  const pill = (href: string, label: string, on: boolean) => (
-    <Link key={href} href={href} aria-current={on ? 'page' : undefined} className={`shrink-0 rounded-full px-3 py-1 text-sm ring-1 ${on ? 'bg-brand text-white ring-brand' : 'bg-white text-harbour ring-harbour/15 hover:text-brand'}`}>
-      {label}
-    </Link>
-  );
   return (
     <ViewFrame className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList(`${props.title}, Jersey`, props.rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
@@ -52,10 +62,7 @@ export function EventLanding(props: {
         </div>
         <ViewToggle className="hidden md:inline-flex" />
       </div>
-      <nav aria-label="Kinds of event" className="mb-4 flex gap-2 overflow-x-auto pb-1">
-        {pill(WEEKEND_PATH, 'This weekend', props.current === WEEKEND_PATH)}
-        {LANDING_TYPES.map((t) => pill(typePath(t), t, props.current === typePath(t)))}
-      </nav>
+      <KindPills current={props.current} />
       <MonthNav months={props.months} />
 
       {highlights.length > 0 && (

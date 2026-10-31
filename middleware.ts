@@ -77,6 +77,12 @@ function kindPage(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
+  // A sign-in Supabase sent to the Site URL rather than back to us: finish it. (The front page is built ahead, so it cannot.)
+  if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.has('code')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/callback';
+    return NextResponse.redirect(url);
+  }
   const kind = kindPage(request);
   if (kind) return kind;
   if (crawlingSearch(request)) {

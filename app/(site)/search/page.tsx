@@ -10,6 +10,7 @@ import { TickList } from '@/components/site/tick-list';
 import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
 import { KINDS, KIND_LABEL, asKinds, type Kind } from '@/lib/domain/search';
 import { jerseyToday, resolveWhen } from '@/lib/domain/when';
+import { filterChips } from '@/lib/domain/filter-chips';
 import { many, one, type SearchParams } from '@/lib/params';
 import { runSearch } from '@/lib/search';
 import { CARD_GRID, asView } from '@/lib/view';
@@ -52,27 +53,29 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
   return (
     <ViewFrame initial={view} className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="mb-2 font-display text-3xl font-bold text-ink">Search</h1>
-      <p className="mb-8 max-w-2xl text-harbour/70">Events, tours, experiences and places across Jersey.</p>
+      <h1 className="mb-6 font-display text-3xl font-bold text-ink">{answer.asked ? 'Found for you' : 'Find something to do'}</h1>
 
-      <FilterPane title="Search" full startOpen={!answer.asked} active={active} results={answer.hits.length} noun="results" button={answer.asked ? undefined : 'Search'} aside={answer.asked ? <ViewToggle /> : undefined}>
-        <FilterBar action="/search" today={today} values={values} round={{ placeholder: 'Events, tours, places…', autoFocus: !answer.asked }} keep={['kind', 'cat']} />
-        <div className="mb-6 grid gap-6 md:grid-cols-2">
+      <FilterPane
+        title="Search"
+        full
+        startOpen={!answer.asked}
+        active={active}
+        results={answer.hits.length}
+        noun="results"
+        button={answer.asked ? undefined : 'Search'}
+        aside={answer.asked ? <ViewToggle /> : undefined}
+        clear="/search"
+        chips={filterChips('/search', values, (k, v) =>
+          k === 'when' ? (answer.range?.label ?? null) : k === 'kind' ? (KIND_LABEL[v as Kind] ?? null) : k === 'q' ? `“${v}”` : v,
+        )}
+      >
+        <FilterBar action="/search" today={today} values={values} round={{ placeholder: 'Events, tours, places…' }} keep={['kind', 'cat']}>
           <TickList title="Show" action="/search" values={values} param="kind" options={KIND_OPTIONS} counts={kindCounts} />
           <TickList title="Categories" action="/search" values={values} param="cat" options={CATEGORY_OPTIONS} counts={answer.cats} />
-        </div>
+        </FilterBar>
       </FilterPane>
 
-      {answer.asked && answer.hits.length > 0 && (
-        <div className="mb-6 hidden items-center justify-between md:flex">
-          <p className="text-sm text-harbour/60">
-            {answer.hits.length} {answer.hits.length === 1 ? 'result' : 'results'}
-          </p>
-          <ViewToggle />
-        </div>
-      )}
-
-      {!answer.asked && <p className="rounded-lg bg-white p-8 text-center text-harbour/70 ring-1 ring-harbour/5">Type what you’re after, or pick a day, a kind of thing or a category.</p>}
+      {!answer.asked && <p className="rounded-lg bg-white p-8 text-center text-harbour/70 ring-1 ring-harbour/5">Pick a day, what you’d like to do and the kinds of thing you enjoy, in the panel at the side.</p>}
 
       {answer.asked && answer.hits.length === 0 && (
         <p className="rounded-lg bg-white p-8 text-center text-harbour/70 ring-1 ring-harbour/5">

@@ -1,52 +1,51 @@
 'use client';
 
 import { SlidersHorizontal, X } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
+/** A choice in force, shown above the results: its words, and the address without it. */
+export type ActiveChip = { label: string; href: string };
+
 /**
- * On a phone, the search, selects and kind tiles take up the screen before
- * a single listing; so there they sit behind a Filters button and slide in
- * from the side, all in one place. On anything wider they show as before,
- * in the page. One copy of the filters either way: the panel is the same
- * element, placed off-canvas below md.
+ * The filters, the same on every listing and on search: a Filters button
+ * and the choices in force, as chips that each take theirs away, sit above
+ * the results; the filters themselves slide in from the side, at any
+ * width, so the results start at the top of the page rather than under a
+ * long menu.
  *
- * Picking a kind changes the page underneath without closing the panel, so
- * the visitor can see the new count and pick again; so do the quick picks
- * for when. The footer button shows the results, applying a typed search
- * or chosen dates first.
+ * Picking a day, a kind or a category changes the page underneath without
+ * closing the panel, so the visitor sees the new count and picks again.
+ * The footer button shows the results, applying a typed word or chosen
+ * dates first.
  */
 export function FilterPane(props: {
   children: React.ReactNode;
   active: number;
   results: number;
   noun: string;
-  /** Beside the count on a phone: the view switch. */
+  /** The choices in force, each removable. */
+  chips?: ActiveChip[];
+  /** Where Clear all leads: the listing with nothing chosen. */
+  clear?: string;
+  /** Beside the count: the view switch. */
   aside?: React.ReactNode;
   /** The panel's name and its button's: Filters, or Search. */
   title?: string;
   /** The whole screen on a phone, not a drawer. */
   full?: boolean;
-  /** Open as the page loads, on a phone: the search, before anything is asked. */
+  /** Open as the page loads: the search, before anything is asked. */
   startOpen?: boolean;
   /** The footer button's words in place of "Show 12 events": the search's "Search" before anything is asked. */
   button?: string;
 }) {
   const title = props.title ?? 'Filters';
   const [open, setOpen] = useState(false);
-  const [phone, setPhone] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767.98px)');
-    const update = () => {
-      setPhone(mq.matches);
-      if (!mq.matches) setOpen(false);
-    };
-    update();
-    if (props.startOpen && mq.matches) setOpen(true);
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
+    if (props.startOpen) setOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -57,10 +56,7 @@ export function FilterPane(props: {
     document.addEventListener('keydown', onKey);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    // The search box when there is one, ready to type in; otherwise the panel.
-    const box = panel.current?.querySelector<HTMLInputElement>('input[type=search]');
-    if (box) box.focus({ preventScroll: true });
-    else panel.current?.focus();
+    panel.current?.focus({ preventScroll: true });
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;
@@ -71,7 +67,7 @@ export function FilterPane(props: {
     setOpen(false);
     opener.current?.focus();
   };
-  // The footer button applies what the form says but the page does not yet show (a search typed, dates chosen), then closes.
+  // The footer button applies what the form says but the page does not yet show (a word typed, dates chosen), then closes.
   const settled = (p: URLSearchParams) =>
     [...p.entries()]
       .filter(([, v]) => v)
@@ -83,60 +79,65 @@ export function FilterPane(props: {
     if (f && settled(new URLSearchParams(new FormData(f) as unknown as Record<string, string>)) !== settled(new URLSearchParams(window.location.search))) f.requestSubmit();
     close();
   };
-  const shut = phone && !open;
   const what = `${props.results} ${props.results === 1 ? props.noun.replace(/s$/, '') : props.noun}`;
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between gap-3 md:hidden">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         <button
           ref={opener}
           type="button"
           onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-controls="filter-pane"
-          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-harbour/15 hover:ring-brand/40"
+          className="inline-flex items-center gap-2 rounded-full bg-harbour px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sea"
         >
           <SlidersHorizontal aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
           {title}
-          {props.active > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[0.7rem] text-white">{props.active}</span>}
+          {props.active > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[0.7rem] text-harbour">{props.active}</span>}
         </button>
-        <div className="flex items-center gap-3">
+        {(props.chips ?? []).map((c) => (
+          <Link
+            key={c.label + c.href}
+            href={c.href}
+            scroll={false}
+            rel="nofollow"
+            className="inline-flex items-center gap-1 rounded-full bg-white py-1.5 pl-3 pr-2 text-sm text-ink ring-1 ring-harbour/15 hover:ring-brand/50"
+          >
+            {c.label}
+            <X aria-label="Remove" className="h-3.5 w-3.5 text-harbour/60" strokeWidth={2.5} />
+          </Link>
+        ))}
+        {props.clear && (props.chips?.length ?? 0) > 1 && (
+          <Link href={props.clear} scroll={false} className="px-1 text-sm text-harbour/60 underline">Clear all</Link>
+        )}
+        <div className="ml-auto flex items-center gap-3">
           <span className="text-sm text-harbour/60">{what}</span>
           {props.aside}
         </div>
       </div>
 
-      <div
-        aria-hidden="true"
-        onClick={close}
-        className={`fixed inset-0 z-40 bg-harbour/40 transition-opacity duration-300 md:hidden ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-      />
+      <div aria-hidden="true" onClick={close} className={`fixed inset-0 z-40 bg-harbour/40 transition-opacity duration-300 ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
 
       <div
         id="filter-pane"
         ref={panel}
-        role={phone ? 'dialog' : undefined}
-        aria-modal={phone && open ? true : undefined}
-        aria-label={phone ? title : undefined}
-        tabIndex={phone ? -1 : undefined}
-        inert={shut}
-        className={`outline-none max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-50 max-md:flex ${props.full ? 'max-md:w-full' : 'max-md:w-[min(24rem,88vw)]'} max-md:flex-col max-md:bg-white max-md:transition-transform max-md:duration-300 max-md:ease-out ${open ? 'max-md:shadow-2xl' : 'max-md:translate-x-full'}`}
+        role="dialog"
+        aria-modal={open ? true : undefined}
+        aria-label={title}
+        tabIndex={-1}
+        inert={!open}
+        className={`fixed inset-y-0 right-0 z-50 flex flex-col bg-white outline-none transition-transform duration-300 ease-out ${props.full ? 'w-full sm:w-[min(30rem,92vw)]' : 'w-[min(30rem,92vw)]'} ${open ? 'shadow-2xl' : 'translate-x-full'}`}
       >
-        <div className="flex items-center justify-between border-b border-harbour/10 bg-white px-4 py-3 md:hidden">
+        <div className="flex items-center justify-between border-b border-harbour/10 px-5 py-4">
           <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
           <button type="button" onClick={close} aria-label={`Close ${title.toLowerCase()}`} className="rounded-full p-2 text-harbour hover:bg-harbour/5 hover:text-brand">
             <X aria-hidden="true" className="h-5 w-5" />
           </button>
         </div>
-        {/* In the panel the fields go full width, the kinds show as a list in place of the tiles, and the footer button stands in for the form's own. */}
-        <div
-          className="max-md:flex-1 max-md:overflow-y-auto max-md:p-4 max-md:[&_[data-kind-tiles]]:hidden max-md:[&_form]:p-0 max-md:[&_form]:shadow-none max-md:[&_form]:ring-0 max-md:[&_form>label]:w-full max-md:[&_form>label]:min-w-0 max-md:[&_form_button[type=submit]]:hidden"
-        >
-          {props.children}
-        </div>
-        <div className="border-t border-harbour/10 bg-white p-4 md:hidden">
-          <button type="button" onClick={show} className="w-full rounded bg-harbour px-4 py-3 text-sm font-semibold text-white hover:bg-sea">
+        <div className="flex-1 overflow-y-auto px-5 py-5">{props.children}</div>
+        <div className="border-t border-harbour/10 p-4">
+          <button type="button" onClick={show} className="w-full rounded-full bg-harbour px-4 py-3 text-sm font-semibold text-white hover:bg-sea">
             {props.button ?? `Show ${what}`}
           </button>
         </div>

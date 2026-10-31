@@ -4,9 +4,10 @@ import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
 import { CARD_GRID, asView } from '@/lib/view';
 import { alternates } from '@/lib/agents/data';
 import { CategoryList } from '@/components/site/category-list';
-import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
-import { jerseyToday, resolveWhen } from '@/lib/domain/when';
+import { jerseyToday, rangeLabel, resolveWhen } from '@/lib/domain/when';
+import { filterChips } from '@/lib/domain/filter-chips';
+import { KindPills } from '@/components/site/event-landing';
 import { FilterBar, monthHeading } from '@/components/site/filter-bar';
 import { publicEventMonths, publicEvents } from '@/lib/db/public';
 import { EventCard, MonthNav } from '@/components/site/event-card';
@@ -73,24 +74,29 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
     <ViewFrame initial={view} className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
       <h1 className="sr-only">What&apos;s on</h1>
-      <FilterPane active={active} results={rows.length} noun="events" aside={<ViewToggle />}>
+      <KindPills />
+      <FilterPane
+        active={active}
+        results={rows.length}
+        noun="events"
+        aside={<ViewToggle />}
+        clear="/whats-on"
+        chips={filterChips('/whats-on', values, (k, v) =>
+          k === 'when' ? (range ? rangeLabel(range) : null) : k === 'venue' ? (venues.get(v)?.name ?? v) : k === 'ongoing' ? 'With ongoing events' : k === 'q' ? `“${v}”` : v,
+        )}
+      >
         <FilterBar
           action="/whats-on"
           today={today}
           values={values}
-          selects={[
-            { name: 'venue', label: 'Venue', options: venueOptions },
-          ]}
+          selects={[{ name: 'venue', label: 'Venue', options: venueOptions }]}
           toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}
           keep={['type']}
-        />
-        <CategoryMenu action="/whats-on" values={values} counts={counts} total={shown.length} />
-        <CategoryList action="/whats-on" values={values} counts={counts} />
+        >
+          <CategoryList action="/whats-on" values={values} counts={counts} />
+        </FilterBar>
       </FilterPane>
-      <div className="mb-6 hidden justify-end md:flex">
-        <ViewToggle />
-      </div>
-      <MonthNav months={months} weekend />
+      <MonthNav months={months} />
 
       {highlights.length > 0 && (
         <section className="mb-12">

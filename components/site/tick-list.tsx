@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { kindsHref } from './category-menu';
 
 /**
- * Choices as a list with a tick each, for a filter panel: bigger words
- * than tiles, and several can be chosen together (any of them shows). Each
- * row is a link that adds or takes away its choice, so the page behind
- * updates without closing the panel. Rows with nothing to show are left
+ * Choices as chips that wrap, for the filter panel: several can be chosen
+ * together (any of them shows), each with how many it would show. Each
+ * chip is a link that adds or takes away its choice, so the page behind
+ * updates without closing the panel. Choices with nothing to show are left
  * out, unless chosen.
  */
 export function TickList(props: {
@@ -27,25 +27,30 @@ export function TickList(props: {
   return (
     <div className={props.className}>
       <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-xs font-medium uppercase tracking-wide text-harbour/60">{props.title}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-harbour/60">{props.title}</h3>
         {chosen.length > 0 && (
-          <Link href={kindsHref(props.action, props.values, props.param, [])} scroll={false} replace className="text-sm text-harbour/60 underline">
+          <Link href={kindsHref(props.action, props.values, props.param, [])} rel="nofollow" scroll={false} replace className="text-xs text-harbour/60 underline">
             Clear {chosen.length}
           </Link>
         )}
       </div>
-      <ul className="divide-y divide-harbour/10 border-y border-harbour/10">
+      <ul className="flex flex-wrap gap-2">
         {rows.map(([value, label, Icon]) => {
           const on = chosen.includes(value);
           return (
             <li key={value}>
-              <Link href={toggle(value)} rel="nofollow" scroll={false} replace role="checkbox" aria-checked={on} className="flex min-h-[3.25rem] items-center gap-3 py-2 text-base text-ink">
-                <Icon aria-hidden="true" className={`h-5 w-5 shrink-0 ${on ? 'text-brand' : 'text-harbour/70'}`} strokeWidth={1.75} />
-                <span className={`flex-1 ${on ? 'font-semibold' : ''}`}>{label}</span>
-                <span className="text-sm tabular-nums text-harbour/50">{props.counts.get(value) ?? 0}</span>
-                <span aria-hidden="true" className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 transition-colors ${on ? 'bg-brand text-white ring-brand' : 'bg-white ring-harbour/25'}`}>
-                  {on && <Check className="h-4 w-4" strokeWidth={3} />}
-                </span>
+              <Link
+                href={toggle(value)}
+                rel="nofollow"
+                scroll={false}
+                replace
+                role="checkbox"
+                aria-checked={on}
+                className={`inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2.5 pr-3 text-sm ring-1 transition-colors ${on ? 'bg-harbour text-white ring-harbour' : 'bg-white text-ink ring-harbour/15 hover:ring-brand/50'}`}
+              >
+                {on ? <Check aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} /> : <Icon aria-hidden="true" className="h-4 w-4 text-harbour/70" strokeWidth={1.75} />}
+                {label}
+                <span className={`text-xs tabular-nums ${on ? 'text-white/70' : 'text-harbour/45'}`}>{props.counts.get(value) ?? 0}</span>
               </Link>
             </li>
           );

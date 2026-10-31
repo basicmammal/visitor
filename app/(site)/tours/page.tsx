@@ -4,9 +4,9 @@ import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
 import { CARD_GRID, asView } from '@/lib/view';
 import { alternates } from '@/lib/agents/data';
 import { CategoryList } from '@/components/site/category-list';
-import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
-import { jerseyToday, resolveWhen } from '@/lib/domain/when';
+import { jerseyToday, resolveWhen, rangeLabel } from '@/lib/domain/when';
+import { filterChips } from '@/lib/domain/filter-chips';
 import { FilterBar } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicTours } from '@/lib/db/public';
@@ -89,7 +89,16 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       <JsonLd data={itemList('Tours & experiences in Jersey', rows.map((r) => `${SITE}/tours/${r.tour.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
-      <FilterPane active={active} results={rows.length} noun="tours" aside={<ViewToggle />}>
+      <FilterPane
+        active={active}
+        results={rows.length}
+        noun="tours"
+        aside={<ViewToggle />}
+        clear="/tours"
+        chips={filterChips('/tours', values, (k, v) =>
+          k === 'when' ? (range ? rangeLabel(range) : null) : k === 'by' ? (found.find((r) => r.provider?.id === v)?.provider?.name ?? null) : k === 'any' ? 'With any-day tours' : k === 'q' ? `“${v}”` : v,
+        )}
+      >
         <FilterBar
           action="/tours"
           today={today}
@@ -100,13 +109,10 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
           ]}
           toggle={{ name: 'any', label: 'Include tours you can book any day', hint: 'Boat trips, bike hire, activity centres and other experiences on demand' }}
           keep={['genre']}
-        />
-        <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
-        <CategoryList action="/tours" values={values} counts={counts} of="tours" />
+        >
+          <CategoryList action="/tours" values={values} counts={counts} of="tours" />
+        </FilterBar>
       </FilterPane>
-      <div className="mb-6 hidden justify-end md:flex">
-        <ViewToggle />
-      </div>
       {dated.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On these dates</h2>

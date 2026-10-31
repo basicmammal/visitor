@@ -44,7 +44,7 @@ export function WhenPicker(props: { when?: string; from?: string; to?: string; t
 
   return (
     <fieldset className="w-full min-w-0">
-      <legend className={props.quiet ? 'sr-only' : 'mb-1.5 text-xs font-medium uppercase tracking-wide text-harbour/60'}>When</legend>
+      <legend className={props.quiet ? 'sr-only' : 'mb-2 text-xs font-semibold uppercase tracking-wide text-harbour/60'}>When</legend>
       <div ref={chips} className={props.row ? '-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden' : 'flex flex-wrap gap-2'}>
         {chip('', 'Any time')}
         {WHEN_PICKS.map((w) => chip(w.value, w.label))}
