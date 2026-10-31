@@ -4,7 +4,7 @@ import { printParish, printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { fit, kindCounts, searchWords, sortHits, type Hit, type Kind } from '@/lib/domain/search';
 import { tourKind } from '@/lib/domain/tour-kind';
-import { cardWhen } from '@/lib/domain/web-dates';
+import { cardWhen, startTimes } from '@/lib/domain/web-dates';
 import { jerseyToday, rangeLabel, resolveWhen, type WhenPick } from '@/lib/domain/when';
 import { cardLocation } from '@/components/site/listing-card';
 import { CATEGORY_LABEL } from '@/lib/params';
@@ -63,8 +63,8 @@ export async function runSearch(ask: SearchAsk): Promise<SearchAnswer> {
         tag: UNIQUE.includes(e.occurrence) ? null : e.occurrence === 'regular' ? 'Regular' : 'Ongoing',
         highlight: e.highlight,
         fit: fit(e.title, words),
-        // Ongoing ones after the dated.
-        order: UNIQUE.includes(e.occurrence) || e.highlight ? next : `~${next}`,
+        // Ongoing ones after the dated; on a day, by the time each starts.
+        order: UNIQUE.includes(e.occurrence) || e.highlight ? `${next} ${startTimes(e.dates, next)[0] ?? '99:99'}` : `~${next}`,
         cats: types,
         hidden: hiddenByDefault(e),
       };

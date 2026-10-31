@@ -57,8 +57,29 @@ export function webWhen(dates: readonly EventDate[], occurrence: Occurrence, tod
  */
 export function cardWhen(dates: readonly EventDate[], occurrence: Occurrence, today: string): string | null {
   const when = webWhen(dates, occurrence, today);
-  if (occurrence === 'ongoing' || occurrence === 'regular' || !when?.includes(', ')) return when;
-  return when.split(', ')[0]!;
+  if (occurrence === 'ongoing' || occurrence === 'regular' || !when) return when;
+  // One day named, the next of several or the only one: its start time beside it.
+  // A run of days: the times too, if every day starts at the same ones.
+  const days = upcomingDates(dates, today);
+  const times = startTimes(dates, days[0]!);
+  const run = when.includes(' – ');
+  const same = !run || days.every((d) => startTimes(dates, d).join() === times.join());
+  const at = times.length && same ? ` · ${times.slice(0, 2).join(', ')}${times.length > 2 ? ' +' : ''}` : '';
+  return (run ? when : when.split(', ')[0]!) + at;
+}
+
+/** The start times on a day, earliest first, each once: "14:00", "19:30". */
+export function startTimes(dates: readonly EventDate[], day: string): string[] {
+  return [...new Set(dates.filter((d) => d.date === day && d.start).map((d) => d.start!))].sort();
+}
+
+/**
+ * The order for a list of events: by the day each is next on, then by
+ * the time it starts that day (those with no time last), then by name.
+ */
+export function byWhen<T extends { next: string; event: { dates: readonly EventDate[]; title?: string } }>(a: T, b: T): number {
+  const at = (r: T) => startTimes(r.event.dates, r.next)[0] ?? '99:99';
+  return a.next.localeCompare(b.next) || at(a).localeCompare(at(b)) || (a.event.title ?? '').localeCompare(b.event.title ?? '');
 }
 
 /** The next date on or after today, for ordering a list. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardWhen, headerWhen, nextDate, webWhen } from '@/lib/domain/web-dates';
+import { byWhen, cardWhen, headerWhen, nextDate, webWhen } from '@/lib/domain/web-dates';
 
 const d = (...isos: string[]) => isos.map((date) => ({ date, start: null, end: null }));
 const today = '2026-10-18';
@@ -89,5 +89,24 @@ describe('when: quick picks and chosen dates', () => {
     const { jerseyToday } = await import('@/lib/domain/when');
     expect(jerseyToday(new Date('2026-10-22T23:30:00Z'))).toBe('2026-10-23'); // BST
     expect(jerseyToday(new Date('2026-12-22T23:30:00Z'))).toBe('2026-12-22'); // GMT
+  });
+});
+
+describe('times on a card', () => {
+  const at = (date: string, start: string | null) => ({ date, start, end: null });
+  it('puts the start beside a day, and beside a run when every day starts alike', () => {
+    expect(cardWhen([at('2026-10-24', '19:30')], 'one-off', today)).toBe('Sat 24 Oct · 19:30');
+    expect(cardWhen([at('2026-10-24', '19:30'), at('2026-10-24', '14:00')], 'one-off', today)).toBe('Sat 24 Oct · 14:00, 19:30');
+    expect(cardWhen([at('2026-10-24', '11:00'), at('2026-10-24', '14:00'), at('2026-10-24', '17:00')], 'one-off', today)).toBe('Sat 24 Oct · 11:00, 14:00 +');
+    expect(cardWhen([at('2026-10-24', '19:30'), at('2026-11-07', '20:00')], 'dates', today)).toBe('Sat 24 Oct · 19:30');
+    expect(cardWhen([at('2026-10-31', '19:30'), at('2026-11-01', '19:30')], 'one-off', today)).toBe('Sat 31 Oct – Sun 1 Nov · 19:30');
+    expect(cardWhen([at('2026-10-31', '19:30'), at('2026-11-01', '14:00')], 'one-off', today)).toBe('Sat 31 Oct – Sun 1 Nov');
+    expect(cardWhen([at('2026-10-24', null)], 'one-off', today)).toBe('Sat 24 Oct');
+  });
+
+  it('orders a day by start time, untimed last', () => {
+    const row = (title: string, start: string | null) => ({ next: '2026-10-24', event: { title, dates: [at('2026-10-24', start)] } });
+    const sorted = [row('A', null), row('B', '19:30'), row('C', '10:00'), row('D', '19:30')].sort(byWhen).map((r) => r.event.title);
+    expect(sorted).toEqual(['C', 'B', 'D', 'A']);
   });
 });

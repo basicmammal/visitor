@@ -3,7 +3,7 @@ import { and, asc, eq, getTableColumns, ne, or, inArray, notInArray, sql, type A
 import { db } from './index';
 import { events, experiences, organiserProfiles, places, providers, type Category, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { nextDate } from '@/lib/domain/web-dates';
+import { byWhen, nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
 import { normaliseName } from '@/lib/domain/same-place';
 import { slugify } from '@/lib/domain/slug';
@@ -86,7 +86,7 @@ export async function publicEvents(f: PublicEventFilter = {}) {
   const from = f.range && f.range.from > today ? f.range.from : today;
   return rows
     .map((r) => ({ ...r, next: nextDate(r.event.dates, from) ?? '9999' }))
-    .sort((a, b) => a.next.localeCompare(b.next) || a.event.title.localeCompare(b.event.title));
+    .sort(byWhen);
 }
 
 /**
@@ -126,7 +126,7 @@ const upcomingPublic = () => [ne(events.inclusion, 'excluded'), eq(events.review
 
 const byNextDate = <T extends { event: { dates: Event['dates'] } }>(rows: T[]) => {
   const today = todayIso();
-  return rows.map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' })).sort((a, b) => a.next.localeCompare(b.next));
+  return rows.map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' })).sort(byWhen);
 };
 
 /** Every public event still to come, ongoing ones too: what the venue and event pages pick from. */
