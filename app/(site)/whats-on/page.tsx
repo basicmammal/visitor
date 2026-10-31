@@ -7,13 +7,11 @@ import { CategoryList } from '@/components/site/category-list';
 import { FilterPane } from '@/components/site/filter-pane';
 import { jerseyToday, rangeLabel, resolveWhen } from '@/lib/domain/when';
 import { filterChips } from '@/lib/domain/filter-chips';
-import { KindPills } from '@/components/site/event-landing';
 import { FilterBar, monthHeading } from '@/components/site/filter-bar';
 import { publicEventMonths, publicEvents } from '@/lib/db/public';
-import { EventCard, MonthNav } from '@/components/site/event-card';
-import { addMonths, monthPath, monthRange, monthTitle } from '@/lib/domain/months';
+import { BrowseLinks, EventCard } from '@/components/site/event-card';
+import { addMonths, monthPath, monthRange } from '@/lib/domain/months';
 import Link from 'next/link';
-import { Fragment } from 'react';
 import { many, one, type SearchParams } from '@/lib/params';
 import { JsonLd } from '@/components/site/json-ld';
 import { SITE } from '@/lib/agents/data';
@@ -74,7 +72,6 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
     <ViewFrame initial={view} className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
       <h1 className="sr-only">What&apos;s on</h1>
-      <KindPills />
       <FilterPane
         active={active}
         results={rows.length}
@@ -96,7 +93,6 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
           <CategoryList action="/whats-on" values={values} counts={counts} />
         </FilterBar>
       </FilterPane>
-      <MonthNav months={months} />
 
       {highlights.length > 0 && (
         <section className="mb-12">
@@ -117,11 +113,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
           <div className={CARD_GRID}>{items.map((r) => <EventCard key={r.event.id} row={r} shownFrom={shownFrom} />)}</div>
         </section>
       ))}
-      {plain && months.length > 2 && (
-        <p className="text-sm text-harbour/70">
-          Further ahead: {months.slice(2).map(({ ym }, i) => <Fragment key={ym}>{i > 0 && ' · '}<Link href={monthPath(ym)} className="underline hover:text-brand">{monthTitle(ym)}</Link></Fragment>)}
-        </p>
-      )}
+      <BrowseLinks months={months} />
     </ViewFrame>
   );
 }

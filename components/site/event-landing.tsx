@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { EventCard, MonthNav } from '@/components/site/event-card';
+import { BrowseLinks, EventCard } from '@/components/site/event-card';
 import { JsonLd } from '@/components/site/json-ld';
 import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
 import { SITE } from '@/lib/agents/data';
@@ -54,16 +54,17 @@ export function EventLanding(props: {
   return (
     <ViewFrame className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList(`${props.title}, Jersey`, props.rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+      <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand"><Link href="/whats-on" className="hover:underline">What&apos;s on</Link></p>
           <h1 className="font-display text-3xl font-semibold text-ink">{props.title}</h1>
           <p className="mt-1 text-harbour/70">{props.intro}</p>
         </div>
-        <ViewToggle className="hidden md:inline-flex" />
+        <div className="flex items-center gap-3 text-sm">
+          <Link href="/whats-on" className="text-harbour/70 hover:text-brand">All events & filters →</Link>
+          <ViewToggle className="hidden md:inline-flex" />
+        </div>
       </div>
-      <KindPills current={props.current} />
-      <MonthNav months={props.months} />
 
       {highlights.length > 0 && (
         <section className="mb-12">
@@ -82,6 +83,7 @@ export function EventLanding(props: {
           <div className={CARD_GRID}>{items.map((r) => <EventCard key={r.event.id} row={r} shownFrom={props.shownFrom} />)}</div>
         </section>
       ))}
+      <BrowseLinks months={props.months} current={props.current} />
     </ViewFrame>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { EventCard, MonthNav } from '@/components/site/event-card';
+import { BrowseLinks, EventCard } from '@/components/site/event-card';
 import { JsonLd } from '@/components/site/json-ld';
 import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
 import { SITE } from '@/lib/agents/data';
@@ -50,7 +50,7 @@ export default async function WhatsOnMonth({ params }: Props) {
   return (
     <ViewFrame className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList(`What’s on in Jersey, ${monthTitle(ym)}`, rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+      <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold text-ink">What&apos;s on in {monthTitle(ym)}</h1>
         <div className="flex items-center gap-3 text-sm">
           {prev >= today.slice(0, 7) && <Link href={monthPath(prev)} className="text-harbour/70 hover:text-brand">← {monthTitle(prev)}</Link>}
@@ -58,7 +58,6 @@ export default async function WhatsOnMonth({ params }: Props) {
           <ViewToggle className="hidden md:inline-flex" />
         </div>
       </div>
-      <MonthNav months={months} current={ym} weekend />
 
       {highlights.length > 0 && (
         <section className="mb-12">
@@ -76,6 +75,7 @@ export default async function WhatsOnMonth({ params }: Props) {
       <p className="mt-10 text-sm text-harbour/60">
         Looking for exhibitions, attractions and weekly sessions too? <Link href="/whats-on?ongoing=1" className="underline">Search everything on</Link>.
       </p>
+      <BrowseLinks months={months} current={monthPath(ym)} />
     </ViewFrame>
   );
 }

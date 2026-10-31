@@ -3,7 +3,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import type { PublicEventRow } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { monthPath, monthTitle } from '@/lib/domain/months';
-import { WEEKEND_PATH } from '@/lib/domain/landing';
+import { LANDING_TYPES, WEEKEND_PATH, typePath } from '@/lib/domain/landing';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 
@@ -27,26 +27,35 @@ export function EventCard({ row: { event: e, venue }, shownFrom, highlight = fal
   );
 }
 
-/** The months with something on, each a page of its own, and how many events: the way through What's on a month at a time. */
-export function MonthNav({ months, current, weekend = false }: { months: { ym: string; n: number }[]; current?: string; weekend?: boolean }) {
-  if (!months.length) return null;
+/**
+ * The ways into What's on that are pages of their own (the weekend, each
+ * kind, each month), as a quiet block of links at the foot of the page:
+ * the filters do the choosing, but crawlers and visitors who reach the end
+ * still find every landing page.
+ */
+export function BrowseLinks({ months, current }: { months: { ym: string; n: number }[]; current?: string }) {
+  const link = (href: string, label: string, n?: number) => (
+    <li key={href}>
+      <Link href={href} aria-current={href === current ? 'page' : undefined} className={href === current ? 'font-semibold text-ink' : 'text-harbour/75 hover:text-brand hover:underline'}>
+        {label}
+        {n !== undefined && <span className="text-harbour/45"> {n}</span>}
+      </Link>
+    </li>
+  );
+  const list = 'flex flex-wrap gap-x-4 gap-y-1.5 text-sm';
+  const head = 'mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-harbour/55';
   return (
-    <nav aria-label="Months" className="mb-8 flex gap-2 overflow-x-auto pb-1">
-      {weekend && (
-        <Link href={WEEKEND_PATH} className="shrink-0 rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white ring-1 ring-brand hover:bg-harbour">
-          This weekend
-        </Link>
+    <nav aria-label="Browse what's on" className="mt-16 grid gap-6 border-t border-harbour/15 pt-6 md:grid-cols-2">
+      <div>
+        <h2 className={head}>By kind</h2>
+        <ul className={list}>{[link(WEEKEND_PATH, 'This weekend'), ...LANDING_TYPES.map((t) => link(typePath(t), t))]}</ul>
+      </div>
+      {months.length > 0 && (
+        <div>
+          <h2 className={head}>By month</h2>
+          <ul className={list}>{months.map(({ ym, n }) => link(monthPath(ym), monthTitle(ym), n))}</ul>
+        </div>
       )}
-      {months.map(({ ym, n }) => (
-        <Link
-          key={ym}
-          href={monthPath(ym)}
-          aria-current={ym === current ? 'page' : undefined}
-          className={`shrink-0 rounded-full px-4 py-1.5 text-sm ring-1 ${ym === current ? 'bg-harbour text-white ring-harbour' : 'bg-white text-harbour ring-harbour/15 hover:text-brand'}`}
-        >
-          {monthTitle(ym)} <span className={ym === current ? 'text-white/70' : 'text-harbour/50'}>{n}</span>
-        </Link>
-      ))}
     </nav>
   );
 }
