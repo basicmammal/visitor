@@ -19,7 +19,11 @@ describe('webWhen', () => {
 
   it('writes regular and ongoing things by their end', () => {
     expect(webWhen(d('2026-10-24', '2026-10-31', '2026-11-07', '2026-11-14'), 'regular', today)).toBe('Every Saturday until 14 Nov');
-    expect(webWhen(d('2026-10-17', '2026-10-18', '2027-12-31'), 'ongoing', today)).toBe('Until 31 Dec 2027');
+    expect(webWhen(d('2026-10-17', '2026-10-18', '2027-01-03'), 'ongoing', today)).toBe('Until 3 Jan 2027');
+    // A placeholder end, far off, is left out.
+    expect(webWhen(d('2026-10-17', '2026-10-18', '2027-12-31'), 'ongoing', today)).toBe('On now');
+    expect(webWhen(d('2027-01-01', '2027-12-31'), 'ongoing', today)).toBe('From 1 Jan 2027');
+    expect(webWhen(d('2026-10-24', '2026-10-31', '2027-12-25'), 'regular', today)).toBe('Every Saturday');
     expect(webWhen(d('2026-11-26', '2026-12-20'), 'ongoing', today)).toBe('26 Nov – 20 Dec');
   });
 

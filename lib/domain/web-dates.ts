@@ -11,8 +11,11 @@ import type { Occurrence } from './occurrence';
  *   Sat 7 Nov, Mon 23 Nov
  *   Sat 2 Nov, Sun 3 Nov, Sat 9 Nov + 6 more
  *   Every Saturday until 17 Apr
- *   Until 31 Dec 2027
+ *   Until 3 Jan
+ *   On now                     (ongoing, no real end in sight)
  */
+/** Past about nine months ahead, an ongoing or regular listing's last date is a placeholder, not a closing date. */
+const OPEN_ENDED_DAYS = 270;
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -36,12 +39,16 @@ export function webWhen(dates: readonly EventDate[], occurrence: Occurrence, tod
   const dm = (x: typeof first) => `${x.d} ${MONTHS[x.m - 1]}${x.y !== thisYear ? ` ${x.y}` : ''}`;
   const full = (x: typeof first) => `${DAYS[x.dow]} ${dm(x)}`;
 
+  // An end this far off is the source's way of saying "no end date" (jersey.com sets 31 Dec next year), so it is not given.
+  const openEnded = last.t - parse(today).t > OPEN_ENDED_DAYS;
   if (occurrence === 'ongoing') {
-    const started = dates.some((d) => d.date < today);
-    return started || first.t - parse(today).t <= 0 ? `Until ${dm(last)}` : `${dm(first)} – ${dm(last)}`;
+    const started = dates.some((d) => d.date < today) || first.t - parse(today).t <= 0;
+    if (openEnded) return started ? 'On now' : `From ${dm(first)}`;
+    return started ? `Until ${dm(last)}` : `${dm(first)} – ${dm(last)}`;
   }
   if (occurrence === 'regular') {
     const sameDay = days.every((x) => x.dow === first.dow);
+    if (openEnded) return sameDay ? `Every ${DAYS_LONG[first.dow]}` : 'Regularly';
     return sameDay ? `Every ${DAYS_LONG[first.dow]} until ${dm(last)}` : `Regularly until ${dm(last)}`;
   }
   if (days.length === 1) return full(first);
