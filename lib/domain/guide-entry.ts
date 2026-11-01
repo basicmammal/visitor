@@ -7,6 +7,7 @@ import {
   printAddress,
   printContact,
   printDates,
+  printOngoingDates,
   printPrice,
   printTimes,
   printTourDates,
@@ -31,8 +32,8 @@ export type GuideEvent = {
   contact: string;
   website: string;
   imageUrl: string;
-  /** Unique events print in date order; ongoing and regular ones in their own block first. */
-  block: 'dated' | 'all season';
+  /** Unique events print in date order; regular ones among them; ongoing ones on Ongoing events pages of their own. */
+  block: 'dated' | 'all season' | 'ongoing';
   /** A full page of its own: the extended listing and a large image. */
   highlight: boolean;
   /** The long copy a highlight prints: ours, else the listing's full description. */
@@ -192,7 +193,8 @@ export function guideWebsite(eventSite: string | null, venueSite: string | null)
 
 export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
   const inside = e.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
-  const dates = e.printDates ?? printDates(e.dates, window);
+  // Ongoing listings go by their own first and last days, not the edition's, and a placeholder end is left off.
+  const dates = e.printDates ?? (e.occurrence === 'ongoing' && window ? printOngoingDates(e.dates, window) : printDates(e.dates, window));
   // Not on during this edition, and nobody has said otherwise.
   if (!dates) return null;
 
@@ -212,7 +214,7 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     // Stock, credited and poster pictures are for the web only: print uses the listing's own photograph or none.
     imageUrl: printable(e.headerImage) ? e.headerImage!.url : '',
     preview: printable(e.headerImage) ? webImage(e.headerImage!, 520, 182) : '',
-    block: (UNIQUE.includes(e.occurrence) ? 'dated' : 'all season') as GuideEvent['block'],
+    block: (UNIQUE.includes(e.occurrence) ? 'dated' : e.occurrence === 'ongoing' ? 'ongoing' : 'all season') as GuideEvent['block'],
     highlight: e.highlight,
     extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',
     sortKey: inside[0]?.date ?? e.startsOn ?? '',

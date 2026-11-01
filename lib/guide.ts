@@ -69,6 +69,9 @@ export type Guide = {
   /** In page order, page by page as the layout set them; a grid's picture box is an entry of its own (frame 'image') beside its listing. */
   events: GuideEvent[];
   pages: GuideEvent[][];
+  /** Exhibitions and the like, on for weeks or months: after the dated pages, on Ongoing events pages of their own, by name. */
+  ongoing: GuideEvent[];
+  ongoingPages: GuideEvent[][];
   layout: Layout;
   /** The whole template: What's On, tours, and each venue section's grid. */
   layouts: GuideLayouts;
@@ -110,8 +113,10 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   // By their first date in the edition, long runs among the rest; onto pages as the layout asks.
-  const pages = layoutEvents(all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title)), layout);
+  const pages = layoutEvents(all.filter((e) => !e.highlight && e.block !== 'ongoing').sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title)), layout);
   const events = pages.flat();
+  const ongoingPages = layoutEvents(all.filter((e) => !e.highlight && e.block === 'ongoing').sort((a, b) => a.title.localeCompare(b.title)), layout);
+  const ongoing = ongoingPages.flat();
 
   // Every provider in the key has a code, so a tour need only print its provider's code; a new one gets its initials until the import saves them.
   const missing = fillCodes([...new Map(tourRows.flatMap(({ provider }) => (provider ? [[provider.id, provider] as const] : []))).values()]);
@@ -191,7 +196,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     // In the order they open again, counting on from the edition's first month.
     .sort((a, b) => ((a.reopens - edition[0]! + 12) % 12) - ((b.reopens - edition[0]! + 12) % 12) || a.name.localeCompare(b.name));
 
-  return { highlights, events, pages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet, lookingAhead };
+  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet, lookingAhead };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */

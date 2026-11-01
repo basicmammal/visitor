@@ -21,7 +21,7 @@ const base: Event = {
 describe('guideEvent', () => {
   it('reads like the printed entry', () => {
     expect(guideEvent(base, null, { from: '2026-09-01', to: '2026-11-30' })).toMatchObject({
-      dates: '1 SEP UNTIL 29 OCT',
+      dates: 'UNTIL 29 OCT', // on before the edition opens: its end only
       times: '10:00-16:00',
       title: 'Meet Albert: The Retired Gunner',
       copy: 'Step into the past and meet Albert.',

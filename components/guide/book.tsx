@@ -398,6 +398,8 @@ export function GuideBook(props: {
   highlights: GuideEvent[];
   events: GuideEvent[];
   pages: GuideEvent[][];
+  /** Ongoing events, on pages of their own after the dated ones. */
+  ongoingPages?: GuideEvent[][];
   layout: Layout;
   tours: GuideTour[];
   /** On a grid, the tours a page at a time after the key; otherwise they flow. */
@@ -481,11 +483,24 @@ export function GuideBook(props: {
   // The opener's picture: the first highlight's, else the first event with its own picture.
   const lead = highlights.find((e) => e.preview) ?? events.find((e) => e.preview);
   const pages: Page[] = [];
-  if (events.length || highlights.length) pages.push({ section: EVENTS, bleed: true, body: <Opener e={lead} /> });
+  if (events.length || highlights.length || props.ongoingPages?.length) pages.push({ section: EVENTS, bleed: true, body: <Opener e={lead} /> });
   for (const h of highlights) pages.push({ section: EVENTS, body: <HighlightBody e={h} /> });
   for (const cells of props.pages) {
     pages.push({
       section: EVENTS,
+      key: cells.filter((e) => e.frame !== 'image').flatMap((e) => iconsFor(e)),
+      body: (
+        <div className={`gp-content gp-grid gp-${layout}`}>
+          {cells.map((e) => <EventCell key={e.frame + e.title + e.sortKey} e={e} />)}
+        </div>
+      ),
+    });
+  }
+  // Ongoing events: exhibitions and the like, on for weeks or months, apart from the dated listings.
+  for (const cells of props.ongoingPages ?? []) {
+    pages.push({
+      section: EVENTS,
+      marker: 'Ongoing events',
       key: cells.filter((e) => e.frame !== 'image').flatMap((e) => iconsFor(e)),
       body: (
         <div className={`gp-content gp-grid gp-${layout}`}>

@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
   await requireStaff();
   const sp = request.nextUrl.searchParams;
   const window = windowFrom({ from: sp.get('from') ?? undefined, to: sp.get('to') ?? undefined });
-  const { events, layout } = await buildGuide(window, { draft: isDraft(sp.get('draft')), layouts: layoutsFrom((k) => sp.get(k)) });
+  const { events: dated, ongoing, layout } = await buildGuide(window, { draft: isDraft(sp.get('draft')), layouts: layoutsFrom((k) => sp.get(k)) });
+  // The Ongoing events pages follow the dated ones; Block says which is which.
+  const events = [...dated, ...ongoing];
   // A grid's picture box is a row of its own: the picture, and the title of the listing it sits beside.
   const csv = toCsv(EVENT_COLUMNS, events.map((e) => e.frame === 'image'
     ? [e.frame, '', '', e.title, '', '', '', '', '', '', e.imageUrl, e.block, '']

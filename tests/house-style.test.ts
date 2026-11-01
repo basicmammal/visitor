@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  printOngoingDates,
   printAddress,
   printContact,
   printDates,
@@ -146,5 +147,22 @@ describe('social pages are not websites', () => {
     const { guideWebsite } = await import('@/lib/domain/guide-entry');
     expect(guideWebsite('https://www.eventbrite.co.uk/e/1', 'https://facebook.com/venue')).toBe('https://www.eventbrite.co.uk/e/1');
     expect(guideWebsite('https://facebook.com/events/1', 'https://venue.je')).toBe('https://venue.je');
+  });
+});
+
+describe('printOngoingDates', () => {
+  const winter = { from: '2026-12-01', to: '2027-02-28' };
+  const days = (from: string, to: string) => {
+    const out: { date: string; start: null; end: null }[] = [];
+    for (let t = Date.parse(from); t <= Date.parse(to); t += 86_400_000) out.push({ date: new Date(t).toISOString().slice(0, 10), start: null, end: null });
+    return out;
+  };
+  it('gives an exhibition its own ends, not the edition’s', () => {
+    expect(printOngoingDates(days('2026-10-31', '2027-12-31'), winter)).toBe('ALL SEASON'); // the source's placeholder end
+    expect(printOngoingDates(days('2026-10-31', '2027-01-10'), winter)).toBe('UNTIL 10 JAN');
+    expect(printOngoingDates(days('2026-10-31', '2027-04-12'), winter)).toBe('UNTIL 12 APR');
+    expect(printOngoingDates(days('2027-01-01', '2027-12-31'), winter)).toBe('FROM 1 JAN');
+    expect(printOngoingDates(days('2026-12-12', '2027-02-04'), winter)).toBe('12 DEC - 4 FEB');
+    expect(printOngoingDates(days('2027-03-01', '2027-06-01'), winter)).toBeNull();
   });
 });

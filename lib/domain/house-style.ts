@@ -57,6 +57,30 @@ function everyWeek(days: Day[]): string | null {
   return weekdays.length === 2 ? `${short(weekdays[0]!)} & ${short(weekdays[1]!)}` : weekdays.map(short).join(', ');
 }
 
+/** Past about six months after the edition, an ongoing listing's last date is the source's "no end", not a closing date. */
+const OPEN_ENDED_AFTER = 180;
+
+/**
+ * When an ongoing listing is on, for the Ongoing events page: by its own
+ * first and last days, not clipped to the edition, and with no end at all
+ * when the source's end is a placeholder far off. "UNTIL 10 JAN",
+ * "FROM 1 JAN", "12 DEC - 4 APR", or "ALL SEASON" when it is on before the
+ * edition starts and after it ends. Null when not on in the edition.
+ */
+export function printOngoingDates(dates: readonly EventDate[], window: { from: string; to: string }): string | null {
+  const isos = [...new Set(dates.map((x) => x.date))].sort();
+  if (!isos.some((iso) => iso >= window.from && iso <= window.to)) return null;
+  const first = day(isos[0]!);
+  const last = day(isos.at(-1)!);
+  const end = day(window.to);
+  const starts = first.iso > window.from;
+  const ends = last.t - end.t <= OPEN_ENDED_AFTER;
+  if (starts && ends) return `${dm(first)} - ${dm(last)}`;
+  if (starts) return `FROM ${dm(first)}`;
+  if (ends) return `UNTIL ${dm(last)}`;
+  return 'ALL SEASON';
+}
+
 /**
  * An event's dates as the guide prints them, keeping only those inside
  * the edition's window.
