@@ -597,3 +597,47 @@ export type Invite = typeof invites.$inferSelect;
 export type ListingChange = typeof listingChanges.$inferSelect;
 export type Claim = typeof claims.$inferSelect;
 export type Subscriber = typeof subscribers.$inferSelect;
+
+/** Where a client's proof stands: sent, looked at, signed off as it is, changes sent, or (staff) the changes taken or turned down. */
+export const PROOF_STATUSES = ['sent', 'opened', 'approved', 'changes', 'accepted', 'declined'] as const;
+export type ProofStatus = (typeof PROOF_STATUSES)[number];
+
+/**
+ * An editorial proof: a client's entry in one edition of the guide, sent
+ * on the artwork deadline by a link of its own, no password. The client
+ * signs it off, or sends new words and a picture, which wait here until
+ * staff take them (onto the listing, locked, for print and the website)
+ * or turn them down. Only the token's hash is kept, as an invite's.
+ */
+export const proofs = pgTable(
+  'proofs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    edition: text('edition').notNull(),
+    kind: text('kind').$type<'venue' | 'event'>().notNull(),
+    listingId: uuid('listing_id').notNull(),
+    email: text('email').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    /** Links sent before this one (a reminder sends a fresh link), which still open it. Hashes only. */
+    formerTokenHashes: text('former_token_hashes').array().notNull().default(sql`'{}'::text[]`),
+    /** The artwork deadline: the last day to reply. The link works a week past it. */
+    deadline: date('deadline').notNull(),
+    status: text('status').$type<ProofStatus>().notNull().default('sent'),
+    /** What the client sent: their words, their picture, a note to us. */
+    proposedCopy: text('proposed_copy'),
+    proposedImage: jsonb('proposed_image').$type<Image | null>(),
+    note: text('note'),
+    sentBy: text('sent_by').notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+    remindedAt: timestamp('reminded_at', { withTimezone: true }),
+    openedAt: timestamp('opened_at', { withTimezone: true }),
+    repliedAt: timestamp('replied_at', { withTimezone: true }),
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewNote: text('review_note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ onePerEdition: uniqueIndex('proofs_one_per_edition').on(t.edition, t.kind, t.listingId) }),
+);
+export type Proof = typeof proofs.$inferSelect;

@@ -122,3 +122,20 @@ export function claimRejectedEmail(input: { name: string; listingTitle: string |
     ],
   );
 }
+
+/** An editorial proof, on the artwork deadline: the client's entry to sign off or change, by their own link. A reminder says so. */
+export function proofEmail(input: { name: string; edition: string; deadline: string; link: string; reminder?: boolean }) {
+  return compose(
+    `${input.reminder ? 'Reminder: ' : ''}your ${input.edition} Visitor Guide proof: ${input.name}`,
+    [
+      'Hello,',
+      input.reminder
+        ? `A reminder that we still need your sign-off for ${input.name} in the ${input.edition} edition of the Visitor Guide.`
+        : `Your entry for ${input.name} in the ${input.edition} edition of the Visitor Guide is ready for you to check.`,
+      'The button below opens it exactly as it will print. You can change the words and the picture there, and see as you type whether it still fits; then approve it, or send us your changes.',
+      `Please reply by ${input.deadline}. If we have not heard by then, it will print as it stands.`,
+    ],
+    { label: 'Check my entry', href: input.link },
+    'The link is yours alone: no password needed. It works until a week after the deadline.',
+  );
+}

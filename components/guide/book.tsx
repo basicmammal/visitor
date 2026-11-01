@@ -25,13 +25,13 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
  */
 
 export type Section = { name: string; colour: string };
-const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
+export const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
 const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
-const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
+export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
 /** A page marker: a second tab under the section's, naming the part of the section the page is in. */
-type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor> };
+export type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor> };
 
 /** Content height of a flowing page, in mm: 8.5mm from the top to 150mm. */
 const FLOW_MM = 141.5;
@@ -41,7 +41,7 @@ function Folio({ n, side }: { n: number; side: 'left' | 'right' }) {
   return <div className={`gp-folio gp-${side}`}><span>{n}</span></div>;
 }
 
-function Frame({ page, n }: { page: Page; n: number }) {
+export function Frame({ page, n }: { page: Page; n: number }) {
   const side = n % 2 === 0 ? 'left' : 'right';
   return (
     <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-tint20': tint(page.section.colour, 20), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
@@ -82,10 +82,13 @@ function PictureBox({ e }: { e: { title: string; preview: string } }) {
  * A fixed frame's copy, measured: the fullest version first, then each
  * shorter one, then all of them again without the droppable line.
  */
-function useFit(copies: string[], droppable: boolean) {
+function useFit(copies: string[], droppable: boolean, strict = false) {
   const ref = useRef<HTMLElement>(null);
   const said = copies.filter(Boolean);
-  const options: [string, boolean][] = [...said.map((c): [string, boolean] => [c, true]), ...(droppable ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
+  // Strict, for a client's proof: their words as written, overset if they do not fit, never cut to fit.
+  const options: [string, boolean][] = strict
+    ? [[said[0] ?? '', true]]
+    : [...said.map((c): [string, boolean] => [c, true]), ...(droppable ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
   const [pick, setPick] = useState(0);
   const [fonts, setFonts] = useState(false);
   const [overset, setOverset] = useState(false);
@@ -95,13 +98,20 @@ function useFit(copies: string[], droppable: boolean) {
       setFonts(true);
     });
   }, []);
+  // New words (a client typing in their proof) are measured afresh, from the fullest.
+  const sig = said.join('\u0001');
+  const [seen, setSeen] = useState(sig);
+  if (seen !== sig) {
+    setSeen(sig);
+    setPick(0);
+  }
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const over = el.scrollHeight > el.clientHeight + 1;
     if (over && pick < options.length - 1) setPick(pick + 1);
     else setOverset(over);
-  }, [pick, fonts, options.length]);
+  }, [pick, fonts, options.length, sig]);
   const [copy, keep] = options[pick] ?? ['', true];
   return { ref, copy, keep, overset };
 }
@@ -156,7 +166,7 @@ function Opener({ e }: { e: GuideEvent | undefined }) {
   );
 }
 
-function HighlightBody({ e }: { e: GuideEvent }) {
+export function HighlightBody({ e }: { e: GuideEvent }) {
   return (
     <div className="gp-content gp-highlight">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -210,7 +220,7 @@ function VenueFoot({ v }: { v: GuideVenue }) {
 }
 
 /** A full-page venue: its picture with the label on it, the name, the copy (the first paragraph standing out), and how to find it. */
-function VenueFullBody({ v }: { v: GuideVenue }) {
+export function VenueFullBody({ v }: { v: GuideVenue }) {
   // The copy as written, paragraphs and all: a full page has room for it.
   const paras = v.copy.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return (
@@ -236,11 +246,11 @@ function VenueFullBody({ v }: { v: GuideVenue }) {
  * three-quarters across for two or three rows, its picture above. Copy
  * fitted as the events' is.
  */
-function VenueBox({ c }: { c: VenueCell }) {
+export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean }) {
   const contact = [c.address, c.phone].filter(Boolean).join(' · ');
   // Where it is, apart, so the grid of sixteen's small boxes can leave it to the area marker.
   const where = c.address && c.phone ? <span className="gp-venue-where-line">{c.address} · </span> : c.address;
-  const { ref, copy, keep, overset } = useFit(c.options.length ? c.options : [c.copy], !!contact);
+  const { ref, copy, keep, overset } = useFit(strict ? [c.copy] : c.options.length ? c.options : [c.copy], !!contact, strict);
   const text = (
     <>
       <p className="gp-venue-head">
@@ -256,7 +266,7 @@ function VenueBox({ c }: { c: VenueCell }) {
     </>
   );
   return (
-    <article ref={ref} className={`gp-event gp-venue gp-venue-${c.frame}${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
+    <article ref={ref} data-measure className={`gp-event gp-venue gp-venue-${c.frame}${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
       {c.frame !== 'listing' && c.preview && (
         <div className="gp-venue-picture">
           {/* eslint-disable-next-line @next/next/no-img-element */}
