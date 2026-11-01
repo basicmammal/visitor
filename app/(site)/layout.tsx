@@ -21,6 +21,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link href="/list" className="font-medium text-harbour hover:text-brand">List your venue, event or tour</Link>
             <p>Check with the organiser before you travel.</p>
+            {/* For staff and listing owners: sign-in sends each to their own home, the superadmin to the admin. */}
+            <Link href="/login" rel="nofollow" className="text-stone-400 hover:text-harbour">Log in</Link>
           </div>
         </div>
       </footer>
