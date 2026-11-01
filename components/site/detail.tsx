@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { printTitle } from '@/lib/domain/house-style';
 import type { EventDate, Image } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
-import { upcomingDates } from '@/lib/domain/web-dates';
+import { upcomingDates, webTime } from '@/lib/domain/web-dates';
 
 const DAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
@@ -56,7 +56,7 @@ export function Copy({ lead, body }: { lead: string | null; body: string | null 
 export function DateList({ dates, today }: { dates: readonly EventDate[]; today: string }) {
   const upcoming = upcomingDates(dates, today);
   if (upcoming.length < 2 || upcoming.length > 40) return null;
-  const times = (iso: string) => dates.filter((d) => d.date === iso && d.start).map((d) => (d.end ? `${d.start}–${d.end}` : d.start)).join(', ');
+  const times = (iso: string) => dates.filter((d) => d.date === iso && d.start).map((d) => (d.end ? `${webTime(d.start!)}–${webTime(d.end)}` : webTime(d.start!))).join(', ');
   return (
     <details className="rounded-lg bg-white p-4 text-sm ring-1 ring-harbour/5">
       <summary className="cursor-pointer font-medium">All {upcoming.length} dates</summary>

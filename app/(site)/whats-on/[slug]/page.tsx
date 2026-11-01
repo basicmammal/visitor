@@ -12,7 +12,7 @@ import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@
 import { printAddress, printPrice, printTimes, printWebsite, siteLabel } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { slugify } from '@/lib/domain/slug';
-import { cardWhen, headerWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
+import { cardWhen, headerWhen, upcomingDates, webTimes, webWhen } from '@/lib/domain/web-dates';
 import { JsonLd } from '@/components/site/json-ld';
 import { eventOut } from '@/lib/agents/data';
 import { breadcrumbs, eventLd } from '@/lib/agents/schema-org';
@@ -89,7 +89,7 @@ export default async function EventPage({ params }: Props) {
               <Facts
                 rows={[
                   ['When', webWhen(e.dates, e.occurrence, today)],
-                  ['Times', timesSummary(printTimes(e.dates.filter((d) => d.date >= today)))],
+                  ['Times', timesSummary(webTimes(printTimes(e.dates.filter((d) => d.date >= today))))],
                   ['Price', price],
                   ['Contact', contact],
                 ]}

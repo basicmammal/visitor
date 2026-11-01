@@ -1,3 +1,4 @@
+import { webTime } from '@/lib/domain/web-dates';
 import type { Email } from './send';
 import { esc, oneLine, shell, site } from './templates';
 
@@ -62,7 +63,7 @@ export const weeklySubject = (c: Pick<WeeklyContent, 'from' | 'to'>) => oneLine(
 /** The week's link on the site: What's On for exactly these days. */
 export const weekHref = (c: Pick<WeeklyContent, 'from' | 'to'>) => `${site()}/whats-on?from=${c.from}&to=${c.to}`;
 
-const meta = (i: WeeklyItem, withDay = false) => [withDay ? longDay(i.day) : null, i.time, i.where, i.price].filter(Boolean).join(' · ');
+const meta = (i: WeeklyItem, withDay = false) => [withDay ? longDay(i.day) : null, i.time && webTime(i.time), i.where, i.price].filter(Boolean).join(' · ');
 
 /**
  * One reader's copy. `links.leave` is their unsubscribe page;

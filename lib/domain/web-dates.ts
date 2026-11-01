@@ -64,7 +64,7 @@ export function cardWhen(dates: readonly EventDate[], occurrence: Occurrence, to
   const times = startTimes(dates, days[0]!);
   const run = when.includes(' – ');
   const same = !run || days.every((d) => startTimes(dates, d).join() === times.join());
-  const at = times.length && same ? ` · ${times.slice(0, 2).join(', ')}${times.length > 2 ? ' +' : ''}` : '';
+  const at = times.length && same ? ` · ${times.slice(0, 2).map(webTime).join(', ')}${times.length > 2 ? ' +' : ''}` : '';
   return (run ? when : when.split(', ')[0]!) + at;
 }
 
@@ -103,4 +103,21 @@ export function headerWhen(dates: readonly EventDate[], occurrence: Occurrence, 
   const full = (x: (typeof days)[number]) => `${DAYS[x.dow]} ${x.d} ${MONTHS[x.m - 1]}${x.y !== thisYear ? ` ${x.y}` : ''}`;
   const rest = days.slice(1);
   return { main: full(days[0]!), more: rest.length <= 2 ? `and ${rest.map(full).join(', ')}` : `and ${rest.length} more dates` };
+}
+
+/** A time as the website writes it: "7.30pm", "10am", "noon", "midnight". */
+export function webTime(hhmm: string): string {
+  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm);
+  if (!m) return hhmm;
+  const h = Number(m[1]) % 24;
+  const min = m[2]!;
+  if (min === '00' && h === 12) return 'noon';
+  if (min === '00' && h === 0) return 'midnight';
+  return `${h % 12 || 12}${min === '00' ? '' : `.${min}`}${h < 12 ? 'am' : 'pm'}`;
+}
+
+/** Every time in a line of them, the website's way, ranges with an en dash: "10:00-16:00 | 19:30" → "10am–4pm | 7.30pm". */
+export function webTimes(line: string | null): string | null {
+  if (!line) return line;
+  return line.replace(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/g, (_, a: string, b: string) => `${webTime(a)}–${webTime(b)}`).replace(/\b\d{1,2}:\d{2}\b/g, webTime);
 }

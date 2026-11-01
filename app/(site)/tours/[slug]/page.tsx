@@ -12,7 +12,7 @@ import { GENRES } from '@/lib/domain/genre';
 import { printPrice, printTimes, siteLabel } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { headerWhen, webWhen } from '@/lib/domain/web-dates';
+import { headerWhen, webTimes, webWhen } from '@/lib/domain/web-dates';
 import { slugify } from '@/lib/domain/slug';
 import { JsonLd } from '@/components/site/json-ld';
 import { tourOut } from '@/lib/agents/data';
@@ -78,7 +78,7 @@ export default async function TourPage({ params }: Props) {
               <Facts
                 rows={[
                   ['When', dated ? webWhen(t.dates, t.occurrence, today) : 'Book any day, subject to availability'],
-                  ['Times', dated ? timesSummary(printTimes(t.dates.filter((d) => d.date >= today))) : null],
+                  ['Times', dated ? timesSummary(webTimes(printTimes(t.dates.filter((d) => d.date >= today)))) : null],
                   ['Duration', t.duration],
                   ['Price', printPrice(t.fromPricePence, t.toPricePence)],
                   ['Contact', t.phone ? <a href={`tel:${t.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{t.phone}</a> : t.email && <a href={`mailto:${t.email}`} className="hover:text-brand">{t.email}</a>],

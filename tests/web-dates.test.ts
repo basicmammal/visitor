@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byWhen, cardWhen, headerWhen, nextDate, webWhen } from '@/lib/domain/web-dates';
+import { byWhen, cardWhen, webTime, webTimes, headerWhen, nextDate, webWhen } from '@/lib/domain/web-dates';
 
 const d = (...isos: string[]) => isos.map((date) => ({ date, start: null, end: null }));
 const today = '2026-10-18';
@@ -95,11 +95,11 @@ describe('when: quick picks and chosen dates', () => {
 describe('times on a card', () => {
   const at = (date: string, start: string | null) => ({ date, start, end: null });
   it('puts the start beside a day, and beside a run when every day starts alike', () => {
-    expect(cardWhen([at('2026-10-24', '19:30')], 'one-off', today)).toBe('Sat 24 Oct · 19:30');
-    expect(cardWhen([at('2026-10-24', '19:30'), at('2026-10-24', '14:00')], 'one-off', today)).toBe('Sat 24 Oct · 14:00, 19:30');
-    expect(cardWhen([at('2026-10-24', '11:00'), at('2026-10-24', '14:00'), at('2026-10-24', '17:00')], 'one-off', today)).toBe('Sat 24 Oct · 11:00, 14:00 +');
-    expect(cardWhen([at('2026-10-24', '19:30'), at('2026-11-07', '20:00')], 'dates', today)).toBe('Sat 24 Oct · 19:30');
-    expect(cardWhen([at('2026-10-31', '19:30'), at('2026-11-01', '19:30')], 'one-off', today)).toBe('Sat 31 Oct – Sun 1 Nov · 19:30');
+    expect(cardWhen([at('2026-10-24', '19:30')], 'one-off', today)).toBe('Sat 24 Oct · 7.30pm');
+    expect(cardWhen([at('2026-10-24', '19:30'), at('2026-10-24', '14:00')], 'one-off', today)).toBe('Sat 24 Oct · 2pm, 7.30pm');
+    expect(cardWhen([at('2026-10-24', '11:00'), at('2026-10-24', '14:00'), at('2026-10-24', '17:00')], 'one-off', today)).toBe('Sat 24 Oct · 11am, 2pm +');
+    expect(cardWhen([at('2026-10-24', '19:30'), at('2026-11-07', '20:00')], 'dates', today)).toBe('Sat 24 Oct · 7.30pm');
+    expect(cardWhen([at('2026-10-31', '19:30'), at('2026-11-01', '19:30')], 'one-off', today)).toBe('Sat 31 Oct – Sun 1 Nov · 7.30pm');
     expect(cardWhen([at('2026-10-31', '19:30'), at('2026-11-01', '14:00')], 'one-off', today)).toBe('Sat 31 Oct – Sun 1 Nov');
     expect(cardWhen([at('2026-10-24', null)], 'one-off', today)).toBe('Sat 24 Oct');
   });
@@ -108,5 +108,14 @@ describe('times on a card', () => {
     const row = (title: string, start: string | null) => ({ next: '2026-10-24', event: { title, dates: [at('2026-10-24', start)] } });
     const sorted = [row('A', null), row('B', '19:30'), row('C', '10:00'), row('D', '19:30')].sort(byWhen).map((r) => r.event.title);
     expect(sorted).toEqual(['C', 'B', 'D', 'A']);
+  });
+});
+
+describe('web times', () => {
+  it('writes times the way a visitor reads them', () => {
+    expect(['19:30', '10:00', '12:00', '00:00', '00:30', '09:05', '12:45'].map(webTime)).toEqual(['7.30pm', '10am', 'noon', 'midnight', '12.30am', '9.05am', '12.45pm']);
+    expect(webTimes('10:00-16:00 | 9:30-23:00')).toBe('10am–4pm | 9.30am–11pm');
+    expect(webTimes('15:00, 19:30')).toBe('3pm, 7.30pm');
+    expect(webTimes(null)).toBeNull();
   });
 });
