@@ -18,7 +18,7 @@ import { HERO_SLIDES, heroPicks, imageKey, isFestival } from '@/lib/domain/hero'
 import { webImage } from '@/lib/domain/images';
 import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { cardWhen, webWhen } from '@/lib/domain/web-dates';
+import { cardWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
 import { addDays } from '@/lib/domain/when';
 import { JsonLd } from '@/components/site/json-ld';
 import { SubscribePopover } from '@/components/site/subscribe-popover';
@@ -32,6 +32,9 @@ export const metadata: Metadata = { alternates: alternates('/') };
 const PLACE_SECTIONS: Category[] = ['eat-drink', 'see', 'do', 'shop', 'stay'];
 // The kinds a visitor comes for: not talks, charity or health, which are mostly for people who live here.
 const FRONT_KINDS = LANDING_TYPES.filter((t) => !['Talks & learning', 'Charity', 'Health & wellbeing'].includes(t));
+const EXHIBITION_KINDS = ['Arts & cultural', 'History & Heritage'];
+// A long-running festival or food season is not an exhibition, though it may be cultural.
+const NOT_EXHIBITIONS = ['Festivals', 'Food & drink', 'Seasonal'];
 const printable = (img: Image | null): img is Image => !!img && !img.credit;
 
 /**
@@ -42,9 +45,11 @@ const printable = (img: Image | null): img is Image => !!img && !img.credit;
  * time the page is redrawn.
  */
 export default async function Home() {
-  const [found, tours, places] = await Promise.all([publicEvents(), publicTours({ showOnDemand: true }), publicAllVenues()]);
+  const [found, tours, places] = await Promise.all([publicEvents({ showOngoing: true }), publicTours({ showOnDemand: true }), publicAllVenues()]);
   // Health listings are for people who live here: off the front page, still behind the Health & wellbeing tile.
-  const events = found.filter((r) => !r.hidden).map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }));
+  const all = found.filter((r) => !r.hidden).map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }));
+  // The front page's events have days to them; what is on every day for months has its own spread below.
+  const events = all.filter((r) => UNIQUE.includes(r.event.occurrence));
   const today = todayIso();
   // The lead goes first; highlights and festivals follow, never with its photo again.
   const lead = pickLead(events, today);
@@ -64,9 +69,10 @@ export default async function Home() {
     };
   });
 
-  // What's on: the next six weeks, not what the hero already shows, with a picture of its own.
+  // What's on: the next six weeks, not what the hero already shows, with a picture of its own;
+  // not a month of days (a season's menus), which reads as ongoing.
   const soon = addDays(today, 42);
-  const onSoon = events.filter((r) => !hero.includes(r) && !nonCore(r.event.eventTypes) && printable(r.event.headerImage) && r.next <= soon && (UNIQUE.includes(r.event.occurrence) || r.event.highlight));
+  const onSoon = events.filter((r) => !hero.includes(r) && !nonCore(r.event.eventTypes) && printable(r.event.headerImage) && r.next <= soon && upcomingDates(r.event.dates, today).length <= 14);
   const eventStories: Story[] = onePerGroup(FRONT_KINDS.map((t) => [t, onSoon.filter((r) => r.event.eventTypes.includes(t))] as const), 6, (r) => r.event.id).map(([t, { event: e, venue }]) => ({
     key: e.id,
     kicker: t,
@@ -78,16 +84,37 @@ export default async function Home() {
     image: e.headerImage!,
   }));
 
-  const tourStories: Story[] = onePerGroup(GENRES.map((g) => [g, tours.filter((r) => r.tour.genre === g && printable(r.tour.headerImage))] as const), 3, (r) => r.tour.id).map(([g, { tour: t, provider }]) => ({
+  // Tours on given days in the same six weeks: not those to book any day, nor every week.
+  const datedTours = tours.filter((r) => UNIQUE.includes(r.tour.occurrence) && r.next <= soon && printable(r.tour.headerImage));
+  const tourStories: Story[] = onePerGroup(GENRES.map((g) => [g, datedTours.filter((r) => r.tour.genre === g)] as const), 3, (r) => r.tour.id).map(([g, { tour: t, provider }]) => ({
     key: t.id,
     kicker: g,
     kickerHref: '/tours',
     title: printTitle(t.title),
     href: `/tours/${t.slug}`,
-    meta: [UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, today) : 'Book any day', provider?.name].filter(Boolean).join(' · ') || null,
+    meta: [cardWhen(t.dates, t.occurrence, today), provider?.name].filter(Boolean).join(' · ') || null,
     blurb: standfirst(t.guideCopy ?? t.summary),
     image: t.headerImage!,
   }));
+
+  // Exhibitions: on for weeks or months, arts and heritage, the highlighted first; a fresh pick each time.
+  const showing = all.filter(
+    (r) => r.event.occurrence === 'ongoing' && printable(r.event.headerImage) && r.event.eventTypes.some((t) => EXHIBITION_KINDS.includes(t)) && !r.event.eventTypes.some((t) => NOT_EXHIBITIONS.includes(t)),
+  );
+  const exhibitionStories: Story[] = [...showing]
+    .map((r) => ({ r, order: (r.event.highlight ? 0 : 1) + Math.random() }))
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 4)
+    .map(({ r: { event: e, venue } }) => ({
+      key: e.id,
+      kicker: e.eventTypes.includes('History & Heritage') ? 'History & Heritage' : 'Arts & cultural',
+      kickerHref: '/whats-on?ongoing=1',
+      title: printTitle(e.title),
+      href: `/whats-on/${e.slug}`,
+      meta: [cardWhen(e.dates, e.occurrence, today), e.venueName ?? venue?.name].filter(Boolean).join(' · ') || null,
+      blurb: standfirst(e.guideCopy ?? e.summary, 140),
+      image: e.headerImage!,
+    }));
 
   // Places: those the guide writes about, with a picture.
   const placeStories: Story[] = onePerGroup(
@@ -121,6 +148,8 @@ export default async function Home() {
         <GuideAd />
 
         <StorySpread title="Tours & experiences" intro="Out with a local guide, on foot, by boat or by bike." more={{ label: 'All tours & experiences', href: '/tours' }} stories={tourStories} cards />
+
+        <StorySpread title="Exhibitions" intro="On now in Jersey’s galleries and museums." more={{ label: 'Everything on, ongoing too', href: '/whats-on?ongoing=1' }} stories={exhibitionStories} cards />
 
         <StorySpread title="Places to go" intro="From the pages of the Visitor Guide." more={{ label: 'All venues', href: '/venues' }} stories={placeStories} cards />
       </div>
