@@ -132,11 +132,11 @@ export function proofEmail(input: { name: string; edition: string; deadline: str
       input.reminder
         ? `A reminder that we still need your sign-off for ${input.name} in the ${input.edition} edition of the Visitor Guide.`
         : `Your entry for ${input.name} in the ${input.edition} edition of the Visitor Guide is ready for you to check.`,
-      'The button below opens it exactly as it will print. You can change the words and the picture there, and see as you type whether it still fits; then approve it, or send us your changes.',
+      'The button below signs you in to your listing, no password needed. There you will find your entry exactly as it will print: change the words and the picture, and see as you type whether it still fits; then approve it, or send us your changes. Your online listing’s details are on the same page.',
       'If you have an advert in this edition, you can send us its new artwork on the same page, let us know new artwork is on its way, or tell us to run the same as last time.',
       `Please reply by ${input.deadline}. If we have not heard by then, it will print as it stands.`,
     ],
-    { label: 'Check my entry', href: input.link },
+    { label: 'Open my listing', href: input.link },
     'The link is yours alone: no password needed. It works until a week after the deadline.',
   );
 }

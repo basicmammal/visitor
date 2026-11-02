@@ -4,6 +4,7 @@ import { FileUp, X } from 'lucide-react';
 import { useState } from 'react';
 import { answerArtwork, startArtworkUpload } from '@/app/proof/actions';
 import type { ArtworkFile, ArtworkPlan } from '@/lib/db/schema';
+import type { ProofKey } from '@/lib/proofs';
 
 export type ArtworkAnswer = { plan: ArtworkPlan | null; files: ArtworkFile[]; due: string };
 
@@ -28,7 +29,7 @@ function put(url: string, file: File, onProgress: (p: number) => void): Promise<
  * files go straight to our storage, however large, up to 50 MB each), say
  * it is on its way and when, or run the same as last time.
  */
-export function ProofArtwork({ token, value, onChange, onBusy }: { token: string; value: ArtworkAnswer; onChange: (a: ArtworkAnswer) => void; onBusy?: (b: boolean) => void }) {
+export function ProofArtwork({ proofKey, value, onChange, onBusy }: { proofKey: ProofKey; value: ArtworkAnswer; onChange: (a: ArtworkAnswer) => void; onBusy?: (b: boolean) => void }) {
   const [busy, setBusyState] = useState<{ name: string; p: number } | null>(null);
   const setBusy = (b: { name: string; p: number } | null) => {
     setBusyState(b);
@@ -42,7 +43,7 @@ export function ProofArtwork({ token, value, onChange, onBusy }: { token: string
     let files = value.files;
     for (const file of [...list]) {
       setBusy({ name: file.name, p: 0 });
-      const start = await startArtworkUpload(token, file.name, file.size);
+      const start = await startArtworkUpload(proofKey, file.name, file.size);
       if (!start.ok) {
         setError(start.error);
         continue;
@@ -118,21 +119,21 @@ export function artworkFields(form: FormData, a: ArtworkAnswer) {
 }
 
 /** The artwork part alone, for when their words are already settled with us. */
-export function ArtworkOnly({ token, initial }: { token: string; initial: ArtworkAnswer }) {
+export function ArtworkOnly({ proofKey, initial }: { proofKey: ProofKey; initial: ArtworkAnswer }) {
   const [value, setValue] = useState(initial);
   const [uploading, setUploading] = useState(false);
   const [state, setState] = useState<'idle' | 'sending' | 'done' | string>('idle');
   const send = async () => {
     setState('sending');
     const form = new FormData();
-    form.set('token', token);
+    keyFields(form, proofKey);
     artworkFields(form, value);
     const r = await answerArtwork(form);
     setState(r.ok ? 'done' : r.error);
   };
   return (
     <div className="max-w-xl space-y-4 rounded-lg bg-white p-6 ring-1 ring-harbour/10">
-      <ProofArtwork token={token} value={value} onChange={(v) => { setValue(v); setState('idle'); }} onBusy={setUploading} />
+      <ProofArtwork proofKey={proofKey} value={value} onChange={(v) => { setValue(v); setState('idle'); }} onBusy={setUploading} />
       <button type="button" onClick={() => void send()} disabled={uploading || state === 'sending' || !value.plan} className="rounded-full bg-harbour px-6 py-3 font-semibold text-white hover:bg-sea disabled:opacity-60">
         {state === 'sending' ? 'Sending…' : 'Send'}
       </button>
@@ -140,4 +141,10 @@ export function ArtworkOnly({ token, initial }: { token: string; initial: Artwor
       {state !== 'idle' && state !== 'sending' && state !== 'done' && <p className="text-sm text-red-700">{state}</p>}
     </div>
   );
+}
+
+/** Which proof the form answers: its link, or (signed in) its id. */
+export function keyFields(form: FormData, key: ProofKey) {
+  if (key.token) form.set('token', key.token);
+  if (key.proofId) form.set('proofId', key.proofId);
 }

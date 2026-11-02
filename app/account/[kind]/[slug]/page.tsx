@@ -1,4 +1,11 @@
+import '@fontsource/barlow-semi-condensed/400.css';
+import '@fontsource/barlow-semi-condensed/500.css';
+import '@fontsource/barlow-semi-condensed/500-italic.css';
+import '@fontsource/barlow-semi-condensed/600.css';
+import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
+import { ProofPanel } from '@/components/proof-panel';
+import { openProofsFor, proofEntry } from '@/lib/proofs';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { requireProvider } from '@/lib/auth/session';
@@ -29,6 +36,9 @@ export default async function EditListingPage({ params, searchParams }: { params
   // Edit the pending version, so a second edit builds on the first rather than losing it.
   const defaults = formDefaults(kind, { ...row, ...(change?.changes ?? {}) });
   const publicPath = PUBLIC_PATH[kind];
+  // Its entry in a printed edition, while that edition's proof is open: beside the online details, to answer here.
+  const proofs = kind === 'experience' ? [] : await openProofsFor(kind, row.id);
+  const printed = (await Promise.all(proofs.map(async (p) => ({ p, entry: await proofEntry(p) })))).filter((x) => x.entry);
   const { created, rewritten } = await searchParams;
 
   return (
@@ -65,6 +75,22 @@ export default async function EditListingPage({ params, searchParams }: { params
         <Notice tone="bad">We did not accept your last change{rejected.reviewNote ? <>: “{rejected.reviewNote}”</> : '.'}</Notice>
       )}
 
+      {printed.map(({ p, entry }) => (
+        <section key={p.id} id="print" className="scroll-mt-4 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4">
+          <div>
+            <h2 className="font-display text-2xl">In the printed guide: {p.edition}</h2>
+            <p className="text-sm text-stone-600">Your entry as it will print, and your advert artwork. Approve it or send changes; we check them before they go to print.</p>
+          </div>
+          <ProofPanel proof={p} entry={entry!} proofKey={{ proofId: p.id }} />
+        </section>
+      ))}
+
+      {printed.length > 0 && (
+        <div>
+          <h2 className="font-display text-2xl">Online listing</h2>
+          <p className="text-sm text-stone-600">How it appears on the website: its details, words and picture.</p>
+        </div>
+      )}
       <ListingForm
         kind={kind}
         id={row.id}

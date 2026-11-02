@@ -6,13 +6,11 @@ import '@fontsource/barlow-semi-condensed/600-italic.css';
 import '@fontsource/barlow-semi-condensed/700.css';
 import type { Metadata } from 'next';
 import { and, eq, isNull } from 'drizzle-orm';
-import { ProofEditor } from '@/components/proof-editor';
-import { ArtworkOnly } from '@/components/proof-artwork';
+import { ProofPanel } from '@/components/proof-panel';
 import { Wordmark } from '@/components/site/wordmark';
 import { db } from '@/lib/db';
 import { proofs } from '@/lib/db/schema';
 import { deadlineText, linkWorks } from '@/lib/domain/proof';
-import { webImage } from '@/lib/domain/images';
 import { proofByToken, proofEntry } from '@/lib/proofs';
 
 export const dynamic = 'force-dynamic';
@@ -35,8 +33,10 @@ function Shell({ children }: { children: React.ReactNode }) {
  * sign-in, the link is the key. Their entry as this edition prints it,
  * to sign off or change.
  */
-export default async function ProofPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function ProofPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ direct?: string }> }) {
   const { token } = await params;
+  // Sent here because signing in could not be done: no point offering it again.
+  const { direct } = await searchParams;
   const proof = await proofByToken(token);
   if (!proof || !linkWorks(proof.deadline))
     return (
@@ -61,38 +61,21 @@ export default async function ProofPage({ params }: { params: Promise<{ token: s
   }
 
   const name = entry.kind === 'venue' ? entry.listing.name : entry.listing.title;
-  // What they sent last time, if staff have not yet dealt with it; else the entry as it stands.
-  const copy = proof.status === 'changes' && proof.proposedCopy ? proof.proposedCopy : entry.copy;
-  const image = (proof.status === 'changes' && proof.proposedImage) || entry.image;
-  const picture = image ? webImage(image, 900, 600) : '';
-  const answered = proof.status === 'approved' || proof.status === 'changes' ? proof.status : null;
-  const done = proof.status === 'accepted' || proof.status === 'declined';
-  const artwork = { plan: proof.artwork, files: proof.artworkFiles, due: proof.artworkDue ?? '' };
 
   return (
     <Shell>
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">{proof.edition} · editorial proof</p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-ink">{name}</h1>
       <p className="mt-2 max-w-2xl text-harbour/75">
-        This is your entry as it will print in the {proof.edition} edition of the Visitor Guide. Check the words and picture, change anything that needs it, tell us about your advert artwork, then approve it or send us your changes{done ? '' : ` by ${deadlineText(proof.deadline)}`}.
+        This is your entry as it will print in the {proof.edition} edition of the Visitor Guide. Check the words and picture, change anything that needs it, tell us about your advert artwork, then approve it or send us your changes by {deadlineText(proof.deadline)}.
       </p>
+      {!direct && (
+        <p className="mt-4 max-w-2xl rounded-md bg-white px-4 py-3 text-sm ring-1 ring-harbour/10">
+          Your online listing too: <a href={`/proof/${token}/enter`} className="font-semibold text-sea underline hover:text-brand">sign in to your listing</a> to change its details on the website, this entry and your artwork, all in one place. No password needed.
+        </p>
+      )}
       <div className="mt-8">
-        {done ? (
-          <div className="space-y-6">
-            <p className="max-w-xl rounded-lg bg-white p-8 ring-1 ring-harbour/10">Our editors have set your entry for print. Reply to the email this came in if something still needs to change.</p>
-            <ArtworkOnly token={token} initial={artwork} />
-          </div>
-        ) : (
-          <ProofEditor
-            token={token}
-            subject={entry.kind === 'venue' ? { kind: 'venue', venue: entry.venue } : { kind: 'event', event: entry.event }}
-            copy={copy}
-            picture={picture}
-            answered={answered}
-            deadline={deadlineText(proof.deadline)}
-            artwork={artwork}
-          />
-        )}
+        <ProofPanel proof={proof} entry={entry} proofKey={{ token }} />
       </div>
     </Shell>
   );

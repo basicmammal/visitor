@@ -6,7 +6,8 @@ import { answerProof } from '@/app/proof/actions';
 import { ProofPage, type Fit, type ProofSubject } from '@/components/guide/proof-page';
 import { webSized } from '@/components/site/staff-edit';
 import { tidyCopy } from '@/lib/domain/proof';
-import { ProofArtwork, artworkFields, type ArtworkAnswer } from '@/components/proof-artwork';
+import { ProofArtwork, artworkFields, keyFields, type ArtworkAnswer } from '@/components/proof-artwork';
+import type { ProofKey } from '@/lib/proofs';
 
 /**
  * The client's side of a proof: their entry as it will print, beside the
@@ -15,7 +16,7 @@ import { ProofArtwork, artworkFields, type ArtworkAnswer } from '@/components/pr
  * is, or, once something has changed, sends the changes to us.
  */
 export function ProofEditor(props: {
-  token: string;
+  proofKey: ProofKey;
   subject: ProofSubject;
   copy: string;
   picture: string;
@@ -52,7 +53,7 @@ export function ProofEditor(props: {
     start(async () => {
       setError(null);
       const form = new FormData();
-      form.set('token', props.token);
+      keyFields(form, props.proofKey);
       form.set('copy', copy);
       form.set('note', note);
       if (file) form.set('file', file);
@@ -119,7 +120,7 @@ export function ProofEditor(props: {
         </div>
 
         <div className="border-t border-harbour/10 pt-6">
-          <ProofArtwork token={props.token} value={artwork} onChange={setArtwork} onBusy={setUploading} />
+          <ProofArtwork proofKey={props.proofKey} value={artwork} onChange={setArtwork} onBusy={setUploading} />
         </div>
 
         {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-800">{error}</p>}

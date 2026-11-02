@@ -3,6 +3,8 @@ import { and, eq, gte, lte, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { events, places, proofs, type Event, type Image, type Place, type Proof } from '@/lib/db/schema';
 import { hashToken } from '@/lib/auth/accounts';
+import { getUser } from '@/lib/auth/session';
+import { canEditListing } from '@/lib/auth/roles';
 import { env } from '@/lib/env';
 import { guideEvent, guideVenue, type GuideEvent, type GuideVenue } from '@/lib/domain/guide-entry';
 import { editions } from '@/lib/guide';
@@ -26,7 +28,8 @@ export function newToken(): { token: string; hash: string } {
   return { token, hash: hashToken(token) };
 }
 
-export const proofLink = (token: string) => `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/proof/${token}`;
+/** The email's button: it signs the client in to their listing, or opens the proof on its own page where it cannot. */
+export const proofLink = (token: string) => `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/proof/${token}/enter`;
 
 /** Someone who gets a proof: a venue with booked space in the edition, or a highlighted event on in it. */
 export type Recipient = { kind: 'venue' | 'event'; listingId: string; name: string; email: string | null; size: string; proof: Proof | null };
@@ -61,6 +64,28 @@ export async function proofByToken(token: string): Promise<Proof | null> {
   // This link, or one sent before a reminder replaced it.
   const [row] = await db.select().from(proofs).where(or(eq(proofs.tokenHash, h), sql`${h} = any(${proofs.formerTokenHashes})`));
   return row ?? null;
+}
+
+/** How a proof is reached: by its emailed link, or by the client signed in to their listings. */
+export type ProofKey = { token?: string; proofId?: string };
+
+/** The proof the key opens: the link's own, or one for a listing the signed-in person may edit. */
+export async function proofFor(key: ProofKey): Promise<Proof | null> {
+  if (key.token) return proofByToken(key.token);
+  if (!key.proofId || !/^[0-9a-f-]{36}$/.test(key.proofId)) return null;
+  const user = await getUser();
+  if (!user) return null;
+  const [p] = await db.select().from(proofs).where(eq(proofs.id, key.proofId));
+  if (!p) return null;
+  const table = p.kind === 'venue' ? places : events;
+  const [listing] = await db.select({ businessId: table.businessId }).from(table).where(eq(table.id, p.listingId));
+  return listing && canEditListing(user, listing) ? p : null;
+}
+
+/** The proofs still open for a listing, newest edition first: what its owner sees beside their online details. */
+export async function openProofsFor(kind: 'venue' | 'event', listingId: string): Promise<Proof[]> {
+  const rows = await db.select().from(proofs).where(and(eq(proofs.kind, kind), eq(proofs.listingId, listingId)));
+  return rows.filter((p) => linkWorks(p.deadline)).sort((a, b) => b.deadline.localeCompare(a.deadline));
 }
 
 /** The entry as the edition prints it: a venue at the size booked, or an event's highlight page. */

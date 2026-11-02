@@ -6,19 +6,23 @@ import { ARTWORK_PLANS, proofs, type ArtworkFile, type ArtworkPlan, type Image, 
 import { allowedArtwork, artworkPath, artworkUploadUrl } from '@/lib/images/artwork';
 import { linkWorks, replyChanges } from '@/lib/domain/proof';
 import { storeListingImage } from '@/lib/images/upload';
-import { proofByToken, proofEntry } from '@/lib/proofs';
+import { proofFor, proofEntry, type ProofKey } from '@/lib/proofs';
 
 export type ProofReply = { ok: true; status: 'approved' | 'changes' } | { ok: false; error: string };
 
+const keyOf = (form: FormData): ProofKey => ({ token: String(form.get('token') ?? '') || undefined, proofId: String(form.get('proofId') ?? '') || undefined });
+const EXPIRED = 'This proof has closed. Reply to the email it came in and we will help.';
+
 /**
- * A client's answer to their proof, by its link alone: the same words and
- * picture sign it off; new words or a new picture wait for staff. They can
- * answer again until staff have dealt with it or the link runs out.
+ * A client's answer to their proof, by its link or signed in to their
+ * listings: the same words and picture sign it off; new words or a new
+ * picture wait for staff. They can answer again, even once staff have
+ * dealt with an earlier answer, until the proof closes a week after the
+ * deadline: a new answer goes back to staff.
  */
 export async function answerProof(form: FormData): Promise<ProofReply> {
-  const proof = await proofByToken(String(form.get('token') ?? ''));
-  if (!proof || !linkWorks(proof.deadline)) return { ok: false, error: 'This link has expired. Reply to the email it came in and we will help.' };
-  if (proof.status === 'accepted' || proof.status === 'declined') return { ok: false, error: 'We have already put this entry to bed. Reply to the email if something needs to change.' };
+  const proof = await proofFor(keyOf(form));
+  if (!proof || !linkWorks(proof.deadline)) return { ok: false, error: EXPIRED };
   const entry = await proofEntry(proof);
   if (!entry) return { ok: false, error: 'This entry is no longer in the guide.' };
 
@@ -47,6 +51,9 @@ export async function answerProof(form: FormData): Promise<ProofReply> {
       proposedImage: image,
       note,
       repliedAt: now,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNote: null,
       updatedAt: now,
     })
     .where(eq(proofs.id, proof.id));
@@ -77,9 +84,9 @@ function artworkFrom(form: FormData, proof: Proof): { artwork: ArtworkPlan | nul
 }
 
 /** A one-time link for the browser to send one artwork file straight to storage. */
-export async function startArtworkUpload(token: string, name: string, size: number): Promise<{ ok: true; path: string; url: string } | { ok: false; error: string }> {
-  const proof = await proofByToken(token);
-  if (!proof || !linkWorks(proof.deadline)) return { ok: false, error: 'This link has expired.' };
+export async function startArtworkUpload(key: ProofKey, name: string, size: number): Promise<{ ok: true; path: string; url: string } | { ok: false; error: string }> {
+  const proof = await proofFor(key);
+  if (!proof || !linkWorks(proof.deadline)) return { ok: false, error: EXPIRED };
   if (!allowedArtwork(name, size)) return { ok: false, error: `${name}: send a PDF, JPEG, PNG, TIFF, EPS, AI, PSD, InDesign or zip file of up to 50 MB.` };
   try {
     const path = artworkPath(proof.id, name);
@@ -92,8 +99,8 @@ export async function startArtworkUpload(token: string, name: string, size: numb
 
 /** Their advert alone, once their words are settled: new files, artwork on its way, or the same as before. */
 export async function answerArtwork(form: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
-  const proof = await proofByToken(String(form.get('token') ?? ''));
-  if (!proof || !linkWorks(proof.deadline)) return { ok: false, error: 'This link has expired. Reply to the email it came in and we will help.' };
+  const proof = await proofFor(keyOf(form));
+  if (!proof || !linkWorks(proof.deadline)) return { ok: false, error: EXPIRED };
   const now = new Date();
   await db.update(proofs).set({ ...artworkFrom(form, proof), repliedAt: now, updatedAt: now }).where(eq(proofs.id, proof.id));
   return { ok: true };
