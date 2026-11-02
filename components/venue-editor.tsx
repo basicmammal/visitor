@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, ImagePlus, RotateCcw } from 'lucide-react';
-import { useMemo, useState, useTransition } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 import { answerProof, saveVenueDetails } from '@/app/proof/actions';
 import { GuidePreview } from '@/components/guide/proof-page';
 import { ProofArtwork, artworkFields, keyFields, type ArtworkAnswer } from '@/components/proof-artwork';
@@ -54,6 +54,8 @@ export function VenueEditor(props: {
   const [done, setDone] = useState(props.answered ?? null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [room, setRoom] = useState<number | null>(null);
+  const onCapacity = useCallback((n: number) => setRoom((was) => (was === n ? was : n)), []);
 
   const description = details.description ?? '';
   const wordsChanged = tidyCopy(description) !== tidyCopy(props.details.description ?? '');
@@ -149,6 +151,7 @@ export function VenueEditor(props: {
           <label htmlFor="description" className="block font-semibold text-ink">About {props.name}</label>
           <p className="mt-0.5 text-sm text-harbour/65">Your words for the website. The guide prints a shorter version: our editors cut it from this to fit your space.</p>
           <textarea id="description" value={description} onChange={(e) => setDetails({ ...details, description: e.target.value })} rows={9} className={input} />
+          <Count used={tidyCopy(description).length} room={room} space={props.booked ? `your ${props.booked.replace(/^(a |your )/, '')}` : 'your listing box'} />
         </div>
 
         {artwork && props.proofKey && (
@@ -202,11 +205,33 @@ export function VenueEditor(props: {
           </div>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-harbour/60">In the guide{props.booked ? `: ${props.booked}` : ': your listing'}</p>
-            <GuidePreview venue={venue} picture={picture} />
+            <GuidePreview venue={venue} picture={picture} sample={description} onCapacity={onCapacity} />
             {!props.booked && <p className="mt-2 max-w-sm text-xs text-harbour/60">Every venue in the guide has a listing like this. Ask us about a bigger entry with a picture.</p>}
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Their words against the guide's space: how many characters they have
+ * written, and about how many fit the frame they have. Past it the guide
+ * prints a shorter version, cut at a sentence.
+ */
+function Count({ used, room, space }: { used: number; room: number | null; space: string }) {
+  if (room === null) return <p className="mt-1 text-right text-xs text-harbour/55">{used} characters</p>;
+  const over = used - room;
+  const pct = Math.min(100, Math.round((used / Math.max(room, 1)) * 100));
+  return (
+    <div className="mt-1.5">
+      <div className="h-1.5 overflow-hidden rounded bg-harbour/10" aria-hidden="true">
+        <div className={`h-full transition-all ${over > 0 ? 'bg-red-600' : pct > 85 ? 'bg-amber-500' : 'bg-sea'}`} style={{ width: `${pct}%` }} />
+      </div>
+      <p className={`mt-1 text-right text-xs ${over > 0 ? 'font-medium text-red-700' : 'text-harbour/60'}`}>
+        {used} characters · about {room} fit {space}
+        {over > 0 && `: ${over} over, so the guide will print a shorter version`}
+      </p>
     </div>
   );
 }

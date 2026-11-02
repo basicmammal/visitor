@@ -88,7 +88,17 @@ export function ProofPage({ subject, copy, picture, onFit }: { subject: ProofSub
  * whole sentences the frame takes; our editors write the printed words,
  * so this shows the shape, not the final wording.
  */
-export function GuidePreview({ venue, picture }: { venue: GuideVenue; picture: string }) {
+export function GuidePreview({ venue, picture, sample, onCapacity }: { venue: GuideVenue; picture: string; sample?: string; onCapacity?: (chars: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [fonts, setFonts] = useState(false);
+  useLayoutEffect(() => {
+    void document.fonts.ready.then(() => setFonts(true));
+  }, []);
+  // How many characters of their words the frame takes, with the details as they now are: measured, not guessed.
+  useLayoutEffect(() => {
+    const page = ref.current?.querySelector<HTMLElement>('.gp-page');
+    if (page && onCapacity) onCapacity(capacity(page, sample ?? ''));
+  }, [venue, picture, fonts, sample, onCapacity]);
   const v = { ...venue, preview: picture };
   const section = venueSection(v.section);
   const body =
@@ -104,8 +114,17 @@ export function GuidePreview({ venue, picture }: { venue: GuideVenue; picture: s
       </div>
     );
   return (
-    <div className="guide-proof">
+    <div ref={ref} className="guide-proof">
       <Frame page={{ section, body }} n={1} />
     </div>
   );
+}
+
+/** The most characters of text like theirs the frame holds, found by halving on a copy of the page off screen. */
+function capacity(page: HTMLElement, sample: string): number {
+  const words = sample.replace(/\s+/g, ' ').trim() || 'Words about the place, what to see and do there, and why a visitor would go.';
+  let text = words;
+  while (text.length < 4000) text = `${text} ${words}`;
+  const fit = measure(page, text);
+  return fit.fits ? text.length : text.length - fit.over;
 }
