@@ -158,7 +158,7 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
                     const key = `${r.kind}:${r.listingId}`;
                     return (
                       <tr key={key} className="border-t border-stone-100 align-middle">
-                        <td className="p-2"><input type="checkbox" name="pick" value={key} defaultChecked={!r.proof && !!r.email} aria-label={`Send to ${r.name}`} /></td>
+                        <td className="p-2"><input type="checkbox" name="pick" value={key} defaultChecked={false} aria-label={`Send to ${r.name}`} /></td>
                         <td className="p-2 font-medium">{r.name}<input type="hidden" name={`name:${key}`} value={r.name} /></td>
                         <td className="p-2 text-stone-600">{SIZE[r.size] ?? r.size}</td>
                         <td className="p-2"><input type="email" name={`email:${key}`} defaultValue={r.proof?.email ?? r.email ?? ''} placeholder="Add an email" className="w-56 rounded border border-stone-300 px-2 py-1" /></td>
@@ -169,7 +169,7 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-stone-500">Ticking someone already sent sends them a fresh link (their first one keeps working). Links work until a week after the deadline.</p>
+            <p className="text-xs text-stone-500">Nobody is ticked to start with: tick who to send to, or select all. Ticking someone already sent sends them a fresh link (their first one keeps working). Links work until a week after the deadline.</p>
           </ProofSendForm>
         )}
       </section>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import { sendProofs, sendReminders, type SendState } from '@/app/admin/proofs/actions';
 
 function Result({ state }: { state: SendState }) {
@@ -31,8 +31,16 @@ function Result({ state }: { state: SendState }) {
 /** The recipients' table as one form: tick, check the address, set the deadline, send. */
 export function ProofSendForm({ edition, deadline, children }: { edition: string; deadline: string; children: React.ReactNode }) {
   const [state, action, pending] = useActionState(sendProofs, null);
+  const form = useRef<HTMLFormElement>(null);
+  const [ticked, setTicked] = useState(0);
+  const boxes = () => [...(form.current?.querySelectorAll<HTMLInputElement>('input[name="pick"]') ?? [])];
+  const count = () => setTicked(boxes().filter((b) => b.checked).length);
+  const tickAll = (on: boolean) => {
+    for (const b of boxes()) b.checked = on;
+    count();
+  };
   return (
-    <form action={action} className="space-y-4">
+    <form ref={form} action={action} onChange={count} className="space-y-4">
       <input type="hidden" name="edition" value={edition} />
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-sm">
@@ -40,8 +48,12 @@ export function ProofSendForm({ edition, deadline, children }: { edition: string
           <input type="date" name="deadline" defaultValue={deadline} required className="mt-1 rounded border border-stone-300 px-2 py-1" />
         </label>
         <button type="submit" disabled={pending} className="rounded bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-700 disabled:opacity-60">
-          {pending ? 'Sending…' : 'Send proofs to those ticked'}
+          {pending ? 'Sending…' : ticked ? `Send ${ticked} proof${ticked === 1 ? '' : 's'}` : 'Send proofs to those ticked'}
         </button>
+        <span className="flex gap-3 pb-2 text-sm">
+          <button type="button" onClick={() => tickAll(true)} className="text-stone-600 underline hover:text-stone-900">Select all</button>
+          <button type="button" onClick={() => tickAll(false)} className="text-stone-600 underline hover:text-stone-900">Unselect all</button>
+        </span>
       </div>
       <Result state={state} />
       {children}
