@@ -626,6 +626,8 @@ export const proofs = pgTable(
     /** What the client sent: their words, their picture, a note to us. */
     proposedCopy: text('proposed_copy'),
     proposedImage: jsonb('proposed_image').$type<Image | null>(),
+    /** New details for the listing, print and online alike: only those they changed. */
+    proposedDetails: jsonb('proposed_details').$type<ProofDetails | null>(),
     note: text('note'),
     sentBy: text('sent_by').notNull(),
     sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
@@ -651,3 +653,16 @@ export type Proof = typeof proofs.$inferSelect;
 export const ARTWORK_PLANS = ['sent', 'coming', 'same'] as const;
 export type ArtworkPlan = (typeof ARTWORK_PLANS)[number];
 export type ArtworkFile = { path: string; name: string; size: number };
+/** A venue's details a client can change in their proof, shared by its print entry and its online listing. */
+export type ProofDetails = Partial<{
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  addressLine1: string | null;
+  parish: string | null;
+  postcode: string | null;
+  openingHours: WeekHours | null;
+  openMonths: number[];
+  summary: string | null;
+  description: string | null;
+}>;

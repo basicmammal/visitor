@@ -56,7 +56,7 @@ export function ProofPage({ subject, copy, picture, onFit }: { subject: ProofSub
   useLayoutEffect(() => {
     const page = ref.current?.querySelector<HTMLElement>('.gp-page');
     if (page) onFit(measure(page, copy));
-  }, [copy, picture, fonts, onFit]);
+  }, [copy, picture, fonts, onFit, subject]);
 
   let body: React.ReactNode;
   let section = EVENTS;

@@ -1,7 +1,11 @@
 'use client';
 
 import { CheckCircle2, ImagePlus, RotateCcw } from 'lucide-react';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
+import { ProofDetails } from '@/components/proof-details';
+import { cleanHours, cleanMonths, type DetailsForm } from '@/lib/domain/proof';
+import { printAddress, printWebsite } from '@/lib/domain/house-style';
+import { openingText } from '@/lib/domain/opening';
 import { answerProof } from '@/app/proof/actions';
 import { ProofPage, type Fit, type ProofSubject } from '@/components/guide/proof-page';
 import { webSized } from '@/components/site/staff-edit';
@@ -24,6 +28,10 @@ export function ProofEditor(props: {
   answered: 'approved' | 'changes' | null;
   deadline: string;
   artwork: ArtworkAnswer;
+  /** A venue's details, shared by print and online: absent for an event. */
+  details?: DetailsForm;
+  /** What staff did with their last answer, shown until they answer again. */
+  notice?: string;
 }) {
   const [copy, setCopy] = useState(props.copy);
   const [picture, setPicture] = useState(props.picture);
@@ -35,9 +43,18 @@ export function ProofEditor(props: {
   const [pending, start] = useTransition();
   const [artwork, setArtwork] = useState<ArtworkAnswer>(props.artwork);
   const [uploading, setUploading] = useState(false);
+  const [details, setDetails] = useState<DetailsForm | undefined>(props.details);
+  // The page beside shows their details as they change them, as the guide prints them.
+  const subject = useMemo(() => {
+    if (props.subject.kind !== 'venue' || !details) return props.subject;
+    const v = props.subject.venue;
+    const address = [details.addressLine1, printAddress({ addressLine1: null, parish: details.parish, postcode: null })].filter(Boolean).join(', ');
+    return { kind: 'venue' as const, venue: { ...v, phone: details.phone ?? '', email: details.email ?? '', website: printWebsite(details.website) ?? '', address, opening: openingText(cleanHours(details.openingHours), cleanMonths(details.openMonths)) ?? '' } };
+  }, [props.subject, details]);
+  const detailsChanged = JSON.stringify(details) !== JSON.stringify(props.details);
   const onFit = useCallback((f: Fit) => setFit((was) => (was.fits === f.fits && (f.fits || (!was.fits && was.over === f.over)) ? was : f)), []);
 
-  const changed = tidyCopy(copy) !== tidyCopy(props.copy) || !!file;
+  const changed = tidyCopy(copy) !== tidyCopy(props.copy) || !!file || detailsChanged;
   const choose = async (f: File | undefined) => {
     if (!f) return;
     const scaled = await webSized(f);
@@ -48,6 +65,7 @@ export function ProofEditor(props: {
     setCopy(props.copy);
     setPicture(props.picture);
     setFile(null);
+    setDetails(props.details);
   };
   const send = () =>
     start(async () => {
@@ -58,6 +76,7 @@ export function ProofEditor(props: {
       form.set('note', note);
       if (file) form.set('file', file);
       artworkFields(form, artwork);
+      if (details) form.set('details', JSON.stringify(details));
       const r = await answerProof(form);
       if (r.ok) setDone(r.status);
       else setError(r.error);
@@ -87,9 +106,11 @@ export function ProofEditor(props: {
     );
 
   return (
+    <div className="space-y-4">
+    {props.notice && <p className="max-w-2xl rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">{props.notice}</p>}
     <div className="grid gap-8 lg:grid-cols-[auto_minmax(0,1fr)]">
-      <div className="mx-auto">
-        <ProofPage subject={props.subject} copy={copy} picture={picture} onFit={onFit} />
+      <div className="mx-auto lg:sticky lg:top-4 lg:self-start">
+        <ProofPage subject={subject} copy={copy} picture={picture} onFit={onFit} />
         <p className={`mt-3 text-center text-sm font-medium ${fit.fits ? 'text-sea' : 'text-red-700'}`}>
           {fit.fits ? 'Fits its space' : `About ${fit.over} character${fit.over === 1 ? '' : 's'} too long: the red outline shows where it runs over`}
         </p>
@@ -114,9 +135,15 @@ export function ProofEditor(props: {
           {file && <span className="ml-3 text-sm text-harbour/65">{file.name}</span>}
         </div>
 
-        <div>
+        {details && (
+          <div className="border-t border-harbour/10 pt-6">
+            <ProofDetails value={details} onChange={setDetails} />
+          </div>
+        )}
+
+        <div className="border-t border-harbour/10 pt-6">
           <label htmlFor="note" className="block font-semibold text-ink">A note for our editors <span className="font-normal text-harbour/55">(optional)</span></label>
-          <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Anything else to change: a phone number, opening times…" className="mt-2 w-full rounded-md border border-harbour/20 p-3 text-[15px] focus:border-sea focus:outline-none focus:ring-2 focus:ring-sea/30" />
+          <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Anything else we should know" className="mt-2 w-full rounded-md border border-harbour/20 p-3 text-[15px] focus:border-sea focus:outline-none focus:ring-2 focus:ring-sea/30" />
         </div>
 
         <div className="border-t border-harbour/10 pt-6">
@@ -138,6 +165,7 @@ export function ProofEditor(props: {
         </div>
         <p className="text-sm text-harbour/60">Please reply by {props.deadline}.</p>
       </div>
+    </div>
     </div>
   );
 }

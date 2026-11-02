@@ -1,14 +1,14 @@
 import { randomBytes } from 'node:crypto';
 import { and, eq, gte, lte, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { events, places, proofs, type Event, type Image, type Place, type Proof } from '@/lib/db/schema';
+import { events, places, proofs, type Event, type Image, type Place, type Proof, type ProofDetails } from '@/lib/db/schema';
 import { hashToken } from '@/lib/auth/accounts';
 import { getUser } from '@/lib/auth/session';
 import { canEditListing } from '@/lib/auth/roles';
 import { env } from '@/lib/env';
 import { guideEvent, guideVenue, type GuideEvent, type GuideVenue } from '@/lib/domain/guide-entry';
 import { editions } from '@/lib/guide';
-import { BOOKED, deadlineText, linkWorks } from '@/lib/domain/proof';
+import { BOOKED, cleanHours, cleanMonths, deadlineText, linkWorks, type DetailsForm } from '@/lib/domain/proof';
 import { emailEnabled, sendEmail } from '@/lib/email/send';
 import { proofEmail } from '@/lib/email/templates';
 
@@ -89,6 +89,11 @@ export async function openProofsFor(kind: 'venue' | 'event', listingId: string):
 }
 
 /** The entry as the edition prints it: a venue at the size booked, or an event's highlight page. */
+/** A venue's details as its proof form starts: the listing as it stands. */
+export function detailsOf(p: Place): DetailsForm {
+  return { phone: p.phone, email: p.email, website: p.website, addressLine1: p.addressLine1, parish: p.parish, postcode: p.postcode, openingHours: cleanHours(p.openingHours), openMonths: cleanMonths(p.openMonths), summary: p.summary, description: p.description };
+}
+
 export type ProofEntry =
   | { kind: 'venue'; venue: GuideVenue; listing: Place; copy: string; image: Image | null }
   | { kind: 'event'; event: GuideEvent; listing: Event; copy: string; image: Image | null };
@@ -107,6 +112,24 @@ export async function proofEntry(proof: Pick<Proof, 'kind' | 'listingId' | 'edit
   if (!event) return null;
   return { kind: 'event', event, listing: row.event, copy: event.extendedCopy, image: row.event.headerImage };
 }
+
+/** A proof as it is before anyone answers it. */
+const FRESH = {
+  status: 'sent' as const,
+  openedAt: null,
+  repliedAt: null,
+  remindedAt: null,
+  proposedCopy: null,
+  proposedImage: null,
+  proposedDetails: null,
+  note: null,
+  artwork: null,
+  artworkFiles: [],
+  artworkDue: null,
+  reviewedBy: null,
+  reviewedAt: null,
+  reviewNote: null,
+};
 
 /** What sending came to: how many went, and, when the site cannot send email, each link to pass on by hand. */
 export type SendResult = { sent: number; failed: string[]; links: { name: string; email: string; link: string }[] };
@@ -139,7 +162,8 @@ export async function issueProofs(edition: string, deadline: string, picks: { ki
     if (r.proof) {
       await db
         .update(proofs)
-        .set({ email: pick.email, deadline, tokenHash: hash, formerTokenHashes: [...r.proof.formerTokenHashes, r.proof.tokenHash], sentBy: by, sentAt: now, updatedAt: now })
+        // Sent again: a fresh start, so nobody sees an answer or a verdict that was not theirs.
+        .set({ email: pick.email, deadline, tokenHash: hash, formerTokenHashes: [...r.proof.formerTokenHashes, r.proof.tokenHash], sentBy: by, sentAt: now, updatedAt: now, ...FRESH })
         .where(eq(proofs.id, r.proof.id));
     } else {
       await db.insert(proofs).values({ edition, kind: r.kind, listingId: r.listingId, email: pick.email, tokenHash: hash, deadline, sentBy: by });
@@ -169,7 +193,7 @@ export async function remindProofs(edition: string): Promise<SendResult> {
  * them) as the listing's guide copy, and their picture as its picture,
  * each locked so no import replaces them. Print and website both.
  */
-export async function acceptProof(id: string, copy: string | null, usePicture: boolean, by: string) {
+export async function acceptProof(id: string, copy: string | null, usePicture: boolean, by: string, details: ProofDetails | null = null) {
   const [p] = await db.select().from(proofs).where(eq(proofs.id, id));
   if (!p) return;
   const table = p.kind === 'venue' ? places : events;
@@ -186,6 +210,13 @@ export async function acceptProof(id: string, copy: string | null, usePicture: b
     set.headerImage = p.proposedImage;
     locked.add('headerImage');
   }
+  // Their details, as staff leave them ticked: on the listing, for print and online alike.
+  if (p.kind === 'venue') {
+    for (const [k, v] of Object.entries(details ?? {})) {
+      set[k] = v;
+      locked.add(k);
+    }
+  }
   if (Object.keys(set).length) {
     await db.update(table).set({ ...set, lockedFields: [...locked], editedBy: by, editedAt: now, updatedAt: now }).where(eq(table.id, p.listingId));
   }
@@ -197,3 +228,6 @@ export async function declineProof(id: string, note: string | null, by: string) 
   await db.update(proofs).set({ status: 'declined', reviewNote: note, reviewedBy: by, reviewedAt: now, updatedAt: now }).where(eq(proofs.id, id));
 }
 
+
+/** A proof by its id, for staff. */
+export const proofsWith = (id: string) => db.select().from(proofs).where(eq(proofs.id, id));

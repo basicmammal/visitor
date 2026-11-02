@@ -1,0 +1,1 @@
+ALTER TABLE "proofs" ADD COLUMN "proposed_details" jsonb;

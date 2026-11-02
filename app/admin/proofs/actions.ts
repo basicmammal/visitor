@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { requireStaff } from '@/lib/auth/session';
 import { refreshSite } from '@/lib/refresh';
 import { tidyCopy } from '@/lib/domain/proof';
-import { acceptProof, declineProof, issueProofs, remindProofs, type SendResult } from '@/lib/proofs';
+import { acceptProof, declineProof, issueProofs, proofsWith, remindProofs, type SendResult } from '@/lib/proofs';
 
 export type SendState = (SendResult & { error?: undefined }) | { error: string } | null;
 
@@ -47,7 +47,10 @@ export async function takeProof(form: FormData) {
   const user = await requireStaff();
   const id = z.string().uuid().parse(form.get('id'));
   const copy = form.has('copy') ? tidyCopy(String(form.get('copy'))) || null : null;
-  await acceptProof(id, copy, form.get('picture') === 'on', user.email);
+  // Their details as sent, those staff leave ticked.
+  const [proof] = await proofsWith(id);
+  const details = Object.fromEntries(Object.entries(proof?.proposedDetails ?? {}).filter(([k]) => form.get(`detail:${k}`) === 'on'));
+  await acceptProof(id, copy, form.get('picture') === 'on', user.email, Object.keys(details).length ? details : null);
   refreshSite();
   revalidatePath('/admin/proofs');
 }

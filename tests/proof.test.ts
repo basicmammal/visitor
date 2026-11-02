@@ -33,3 +33,13 @@ describe('proof artwork', () => {
     expect(allowedArtwork('huge.pdf', 60 * 1024 * 1024)).toBe(false);
   });
 });
+
+describe('proof details', () => {
+  it('keeps only what a client changed, tidied', async () => {
+    const { detailsChanges } = await import('@/lib/domain/proof');
+    const now = { phone: '01534 123456', email: 'Shop@x.je', website: 'x.je', addressLine1: '1 King St', parish: 'St Helier', postcode: 'JE2 4WE', openingHours: { mon: ['09:00', '17:00'] as [string, string] }, openMonths: [], summary: 'Jewellers.', description: 'Fine jewellery.' };
+    expect(detailsChanges(now, { phone: ' 01534 123456 ', email: 'shop@x.je', openMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], openingHours: { mon: ['09:00', '17:00'] } })).toBeNull();
+    expect(detailsChanges(now, { openingHours: { mon: ['09:30', '17:30'], sun: ['', ''] }, postcode: 'je2 4we', website: 'rivoli.je' })).toEqual({ openingHours: { mon: ['09:30', '17:30'] }, website: 'rivoli.je' });
+    expect(detailsChanges(now, { openMonths: [4, 5, 6, 7, 8, 9, 10], summary: '' })).toEqual({ openMonths: [4, 5, 6, 7, 8, 9, 10], summary: null });
+  });
+});

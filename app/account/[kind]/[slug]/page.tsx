@@ -78,19 +78,30 @@ export default async function EditListingPage({ params, searchParams }: { params
       {printed.map(({ p, entry }) => (
         <section key={p.id} id="print" className="scroll-mt-4 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4">
           <div>
-            <h2 className="font-display text-2xl">In the printed guide: {p.edition}</h2>
-            <p className="text-sm text-stone-600">Your entry as it will print, and your advert artwork. Approve it or send changes; we check them before they go to print.</p>
+            <h2 className="font-display text-2xl">Your listing for {p.edition}: in print and online</h2>
+            <p className="text-sm text-stone-600">Your entry as it will print, your details and opening times (the same in print and on the website), and your advert artwork. Approve it, or send changes: we check them first.</p>
           </div>
           <ProofPanel proof={p} entry={entry!} proofKey={{ proofId: p.id }} />
         </section>
       ))}
 
-      {printed.length > 0 && (
-        <div>
-          <h2 className="font-display text-2xl">Online listing</h2>
-          <p className="text-sm text-stone-600">How it appears on the website: its details, words and picture.</p>
-        </div>
-      )}
+      {printed.length > 0 ? (
+        // One form for what matters now, above; the rest of the online listing folded away.
+        <details className="rounded-lg border border-stone-200 bg-white p-4">
+          <summary className="cursor-pointer font-medium">More online settings: name, type and the rest of your website listing</summary>
+          <p className="mt-2 text-sm text-stone-600">Your details, opening times and words are in the form above. Change the rest here.</p>
+          <div className="mt-4">
+            <ListingForm
+              kind={kind}
+              id={row.id}
+              defaults={defaults}
+              options={options}
+              parishes={JERSEY_PARISHES}
+              submitLabel={row.review === 'approved' ? 'Send change for review' : 'Save'}
+            />
+          </div>
+        </details>
+      ) : (
       <ListingForm
         kind={kind}
         id={row.id}
@@ -99,6 +110,7 @@ export default async function EditListingPage({ params, searchParams }: { params
         parishes={JERSEY_PARISHES}
         submitLabel={row.review === 'approved' ? 'Send change for review' : 'Save'}
       />
+      )}
     </div>
   );
 }

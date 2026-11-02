@@ -4,9 +4,9 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { ARTWORK_PLANS, proofs, type ArtworkFile, type ArtworkPlan, type Image, type Proof } from '@/lib/db/schema';
 import { allowedArtwork, artworkPath, artworkUploadUrl } from '@/lib/images/artwork';
-import { linkWorks, replyChanges } from '@/lib/domain/proof';
+import { detailsChanges, linkWorks, replyChanges } from '@/lib/domain/proof';
 import { storeListingImage } from '@/lib/images/upload';
-import { proofFor, proofEntry, type ProofKey } from '@/lib/proofs';
+import { detailsOf, proofFor, proofEntry, type ProofKey } from '@/lib/proofs';
 
 export type ProofReply = { ok: true; status: 'approved' | 'changes' } | { ok: false; error: string };
 
@@ -39,8 +39,18 @@ export async function answerProof(form: FormData): Promise<ProofReply> {
     return { ok: false, error: (e as Error).message };
   }
 
+  // Their details, for a venue: only what they changed of what the listing has.
+  let details = null;
+  if (entry.kind === 'venue') {
+    try {
+      details = detailsChanges(detailsOf(entry.listing), JSON.parse(String(form.get('details') ?? '{}')));
+    } catch {
+      details = null;
+    }
+  }
+
   // A note alone asks for something too: it waits for staff, not signed off.
-  const changed = !!changes.copy || !!image || !!note;
+  const changed = !!changes.copy || !!image || !!note || !!details;
   const now = new Date();
   await db
     .update(proofs)
@@ -49,6 +59,7 @@ export async function answerProof(form: FormData): Promise<ProofReply> {
       status: changed ? 'changes' : 'approved',
       proposedCopy: changes.copy,
       proposedImage: image,
+      proposedDetails: details,
       note,
       repliedAt: now,
       reviewedBy: null,

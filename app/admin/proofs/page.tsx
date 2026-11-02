@@ -3,6 +3,8 @@ import { ProofRemindForm, ProofSendForm } from '@/components/admin/proof-send';
 import { takeProof, turnDownProof } from './actions';
 import type { Proof } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
+import { hoursText, type WeekHours } from '@/lib/domain/opening';
+import { openMonthsText } from '@/lib/domain/format';
 import { deadlineText, linkWorks } from '@/lib/domain/proof';
 import { emailEnabled } from '@/lib/email/send';
 import { artworkDownloadUrl } from '@/lib/images/artwork';
@@ -50,6 +52,16 @@ async function Artwork({ p }: { p: Proof | null }) {
   );
 }
 
+const DETAIL: Record<string, string> = { phone: 'Phone', email: 'Email', website: 'Website', addressLine1: 'Address', parish: 'Parish', postcode: 'Postcode', openingHours: 'Hours', openMonths: 'Months open', summary: 'Summary (online)', description: 'Description (online)' };
+
+/** A detail as a person reads it: hours and months in words, the rest as written, nothing as a dash. */
+function shown(k: string, v: unknown): string {
+  if (k === 'openingHours') return hoursText(v as WeekHours | null) ?? 'none given';
+  if (k === 'openMonths') return ((v as number[] | null)?.length && openMonthsText(v as number[])) || 'all year';
+  if (k === 'description' && typeof v === 'string') return v.length > 160 ? `${v.slice(0, 160)}…` : v;
+  return typeof v === 'string' && v ? v : '–';
+}
+
 const SIZE: Record<string, string> = { full: 'Full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page', highlight: 'Highlight page' };
 
 /** A client's changes beside what the entry says now: take them (the words as left in the box), or turn them down. */
@@ -73,6 +85,20 @@ async function Review({ r }: { r: Recipient }) {
               <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">Their words (edit before taking)</span>
               <textarea name="copy" defaultValue={p.proposedCopy} rows={8} className="mt-1 w-full rounded border border-stone-300 p-2 text-sm" />
             </label>
+          </div>
+        )}
+        {p.proposedDetails && entry?.kind === 'venue' && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Their details (untick any to leave as it is)</p>
+            <ul className="mt-1 space-y-1 text-sm">
+              {Object.entries(p.proposedDetails).map(([k, v]) => (
+                <li key={k} className="flex flex-wrap items-baseline gap-2">
+                  <label className="flex items-baseline gap-2"><input type="checkbox" name={`detail:${k}`} defaultChecked /> <b>{DETAIL[k] ?? k}</b></label>
+                  <span className="text-stone-500 line-through">{shown(k, (entry.listing as Record<string, unknown>)[k])}</span>
+                  <span>→ {shown(k, v)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {p.proposedImage && (
