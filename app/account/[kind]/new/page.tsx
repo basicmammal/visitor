@@ -31,7 +31,7 @@ export default async function NewListingPage({ params, searchParams }: { params:
   const defaults: FormDefaults = copied ? { ...formDefaults(kind, copied), dates: '' } : kind === 'venue' ? { category: 'see' } : {};
   return (
     <div className="space-y-4">
-      <Link href="/account" className="text-sm text-stone-500 hover:underline">← Your listings</Link>
+      <Link href={`/account/${(await params).kind}`} className="text-sm text-stone-500 hover:underline">← Back</Link>
       <h1 className="font-display text-3xl">{TITLE[kind]}</h1>
       <p className="max-w-2xl text-sm text-stone-600">
         {copied ? <>Copied from <strong>{String(copied.title)}</strong>: add the new dates, and change anything that is different this time. </> : null}

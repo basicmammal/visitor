@@ -52,7 +52,7 @@ export default async function EditListingPage({ params, searchParams }: { params
 
   return (
     <div className="space-y-4">
-      <Link href="/account" className="text-sm text-stone-500 hover:underline">← Your listings</Link>
+      <Link href={`/account/${segment}`} className="text-sm text-stone-500 hover:underline">← All of them</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-display text-3xl">{titleOf(row as never)}</h1>
         <div className="flex items-center gap-3">
