@@ -1,8 +1,11 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { getUser } from '@/lib/auth/session';
+import { canEditListing } from '@/lib/auth/roles';
+import { rewriteListing } from '@/lib/integrations/claude/rewrite';
 import { db } from '@/lib/db';
-import { ARTWORK_PLANS, proofs, type ArtworkFile, type ArtworkPlan, type Image, type Proof } from '@/lib/db/schema';
+import { ARTWORK_PLANS, listingChanges, places, proofs, type ArtworkFile, type ArtworkPlan, type Image, type Proof } from '@/lib/db/schema';
 import { allowedArtwork, artworkPath, artworkUploadUrl } from '@/lib/images/artwork';
 import { detailsChanges, linkWorks, replyChanges } from '@/lib/domain/proof';
 import { storeListingImage } from '@/lib/images/upload';
@@ -115,4 +118,51 @@ export async function answerArtwork(form: FormData): Promise<{ ok: true } | { ok
   const now = new Date();
   await db.update(proofs).set({ ...artworkFrom(form, proof), repliedAt: now, updatedAt: now }).where(eq(proofs.id, proof.id));
   return { ok: true };
+}
+
+/**
+ * A venue owner's one form, with no proof open: their details, opening
+ * times, picture and words become a change to the listing, waiting for
+ * staff as any provider's change does (or, before the listing is live,
+ * saved on it). New words are put in the guide's voice, with the card's
+ * one sentence, as the older form did.
+ */
+export async function saveVenueDetails(form: FormData): Promise<{ ok: true; status: 'saved' | 'changes' } | { ok: false; error: string }> {
+  const user = await getUser();
+  if (!user) return { ok: false, error: 'Sign in again to save.' };
+  const id = String(form.get('listingId') ?? '');
+  if (!/^[0-9a-f-]{36}$/.test(id)) return { ok: false, error: 'Not found.' };
+  const [row] = await db.select().from(places).where(eq(places.id, id));
+  if (!row || !canEditListing(user, row) || !row.businessId) return { ok: false, error: 'Not found.' };
+
+  let changes: Record<string, unknown> = {};
+  try {
+    changes = { ...(detailsChanges(detailsOf(row), JSON.parse(String(form.get('details') ?? '{}'))) ?? {}) };
+  } catch {
+    changes = {};
+  }
+  const file = form.get('file');
+  try {
+    if (file instanceof File && file.size > 0) changes.headerImage = { url: await storeListingImage('venue', id, file), publicId: null, alt: null, originalFilename: file.name || null } satisfies Image;
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  if (typeof changes.description === 'string') {
+    const r = await rewriteListing({ kind: 'venue', name: row.name, summary: null, description: changes.description });
+    if (r) Object.assign(changes, { description: r.description, summary: r.snippet });
+  }
+  if (!Object.keys(changes).length) return { ok: false, error: 'Nothing has changed yet.' };
+
+  const now = new Date();
+  if (row.review !== 'approved') {
+    await db.update(places).set({ ...changes, lockedFields: [...new Set([...row.lockedFields, ...Object.keys(changes)])], editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(places.id, id));
+    return { ok: true, status: 'saved' };
+  }
+  // One open change a listing: this one builds on any still waiting.
+  const [open] = await db.select().from(listingChanges).where(and(eq(listingChanges.kind, 'venue'), eq(listingChanges.listingId, id), eq(listingChanges.status, 'pending')));
+  await db.transaction(async (tx) => {
+    if (open) await tx.delete(listingChanges).where(eq(listingChanges.id, open.id));
+    await tx.insert(listingChanges).values({ kind: 'venue', listingId: id, businessId: row.businessId!, changes: { ...(open?.changes ?? {}), ...changes }, submittedBy: user.email });
+  });
+  return { ok: true, status: 'changes' };
 }

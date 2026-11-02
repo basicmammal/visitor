@@ -5,7 +5,15 @@ import '@fontsource/barlow-semi-condensed/600.css';
 import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
 import { ProofPanel } from '@/components/proof-panel';
-import { openProofsFor, proofEntry } from '@/lib/proofs';
+import { detailsOf, openProofsFor, proofEntry } from '@/lib/proofs';
+import { VenueEditor } from '@/components/venue-editor';
+import { guideVenue } from '@/lib/domain/guide-entry';
+import { webImage } from '@/lib/domain/images';
+import { BOOKED } from '@/lib/domain/proof';
+import type { Image, Place } from '@/lib/db/schema';
+
+const DETAIL_KEYS = ['phone', 'email', 'website', 'addressLine1', 'parish', 'postcode', 'openingHours', 'openMonths', 'summary', 'description'] as const;
+const pick = (o: Record<string, unknown>, keys: readonly string[]) => Object.fromEntries(Object.entries(o).filter(([k]) => keys.includes(k)));
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { requireProvider } from '@/lib/auth/session';
@@ -36,6 +44,7 @@ export default async function EditListingPage({ params, searchParams }: { params
   // Edit the pending version, so a second edit builds on the first rather than losing it.
   const defaults = formDefaults(kind, { ...row, ...(change?.changes ?? {}) });
   const publicPath = PUBLIC_PATH[kind];
+  const venueImage = kind === 'venue' ? ((change?.changes?.headerImage as Image | undefined) ?? (row as unknown as Place).headerImage) : null;
   // Its entry in a printed edition, while that edition's proof is open: beside the online details, to answer here.
   const proofs = kind === 'experience' ? [] : await openProofsFor(kind, row.id);
   const printed = (await Promise.all(proofs.map(async (p) => ({ p, entry: await proofEntry(p) })))).filter((x) => x.entry);
@@ -75,41 +84,42 @@ export default async function EditListingPage({ params, searchParams }: { params
         <Notice tone="bad">We did not accept your last change{rejected.reviewNote ? <>: “{rejected.reviewNote}”</> : '.'}</Notice>
       )}
 
-      {printed.map(({ p, entry }) => (
-        <section key={p.id} id="print" className="scroll-mt-4 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4">
-          <div>
-            <h2 className="font-display text-2xl">Your listing for {p.edition}: in print and online</h2>
-            <p className="text-sm text-stone-600">Your entry as it will print, your details and opening times (the same in print and on the website), and your advert artwork. Approve it, or send changes: we check them first.</p>
-          </div>
-          <ProofPanel proof={p} entry={entry!} proofKey={{ proofId: p.id }} />
-        </section>
-      ))}
-
-      {printed.length > 0 ? (
-        // One form for what matters now, above; the rest of the online listing folded away.
-        <details className="rounded-lg border border-stone-200 bg-white p-4">
-          <summary className="cursor-pointer font-medium">More online settings: name, type and the rest of your website listing</summary>
-          <p className="mt-2 text-sm text-stone-600">Your details, opening times and words are in the form above. Change the rest here.</p>
-          <div className="mt-4">
-            <ListingForm
-              kind={kind}
-              id={row.id}
-              defaults={defaults}
-              options={options}
-              parishes={JERSEY_PARISHES}
-              submitLabel={row.review === 'approved' ? 'Send change for review' : 'Save'}
-            />
-          </div>
-        </details>
+      {kind === 'venue' ? (
+        // A venue: one form for its listing, print and online, with how it will look beneath.
+        printed.length ? (
+          <section id="print" className="scroll-mt-4 space-y-3">
+            <p className="max-w-2xl text-sm text-stone-600">You are in the {printed[0]!.p.edition} edition of the guide. Check your listing below: approve it, or send changes. We check them first.</p>
+            <ProofPanel proof={printed[0]!.p} entry={printed[0]!.entry!} proofKey={{ proofId: printed[0]!.p.id }} />
+          </section>
+        ) : (
+          <VenueEditor
+            listingId={row.id}
+            name={titleOf(row as never)}
+            venue={guideVenue({ ...(row as unknown as Place), listingSize: BOOKED.includes((row as unknown as Place).listingSize as never) ? (row as unknown as Place).listingSize : 'listing' })}
+            booked={BOOKED.includes((row as unknown as Place).listingSize as never) ? 'your booked space' : null}
+            picture={venueImage ? webImage(venueImage, 900, 600) : ''}
+            details={{ ...detailsOf(row as unknown as Place), ...pick(change?.changes ?? {}, DETAIL_KEYS) }}
+            printCopy=""
+            answered={change ? 'changes' : null}
+          />
+        )
       ) : (
-      <ListingForm
-        kind={kind}
-        id={row.id}
-        defaults={defaults}
-        options={options}
-        parishes={JERSEY_PARISHES}
-        submitLabel={row.review === 'approved' ? 'Send change for review' : 'Save'}
-      />
+        <>
+          {printed.map(({ p, entry }) => (
+            <section key={p.id} id="print" className="scroll-mt-4 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4">
+              <h2 className="font-display text-2xl">In the printed guide: {p.edition}</h2>
+              <ProofPanel proof={p} entry={entry!} proofKey={{ proofId: p.id }} />
+            </section>
+          ))}
+          <ListingForm
+            kind={kind}
+            id={row.id}
+            defaults={defaults}
+            options={options}
+            parishes={JERSEY_PARISHES}
+            submitLabel={row.review === 'approved' ? 'Send change for review' : 'Save'}
+          />
+        </>
       )}
     </div>
   );

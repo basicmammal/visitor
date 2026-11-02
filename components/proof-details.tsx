@@ -113,12 +113,6 @@ export function ProofDetails({ value, onChange }: { value: DetailsForm; onChange
         <Months value={value.openMonths} onChange={(m) => set('openMonths', m)} />
       </fieldset>
 
-      <fieldset className="space-y-3">
-        <legend className="font-semibold text-ink">On the website</legend>
-        <p className="text-sm text-harbour/65">Your online listing’s own words: the guide prints the words above.</p>
-        <Field label="Summary" hint="One sentence, for the cards that list you."><input value={value.summary ?? ''} onChange={(e) => set('summary', e.target.value)} className={input} /></Field>
-        <Field label="Description"><textarea value={value.description ?? ''} onChange={(e) => set('description', e.target.value)} rows={7} className={input} /></Field>
-      </fieldset>
     </div>
   );
 }

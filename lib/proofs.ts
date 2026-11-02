@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { events, places, proofs, type Event, type Image, type Place, type Proof, type ProofDetails } from '@/lib/db/schema';
 import { hashToken } from '@/lib/auth/accounts';
 import { getUser } from '@/lib/auth/session';
+import { rewriteListing } from '@/lib/integrations/claude/rewrite';
 import { canEditListing } from '@/lib/auth/roles';
 import { env } from '@/lib/env';
 import { guideEvent, guideVenue, type GuideEvent, type GuideVenue } from '@/lib/domain/guide-entry';
@@ -215,6 +216,17 @@ export async function acceptProof(id: string, copy: string | null, usePicture: b
     for (const [k, v] of Object.entries(details ?? {})) {
       set[k] = v;
       locked.add(k);
+    }
+    // Their new words, in the guide's voice: the website's text and card sentence, and what the guide cuts its entry from.
+    if (typeof set.description === 'string') {
+      const [place] = await db.select({ name: places.name, locked: places.lockedFields }).from(places).where(eq(places.id, p.listingId));
+      const r = await rewriteListing({ kind: 'venue', name: place?.name ?? '', summary: null, description: set.description });
+      if (r) Object.assign(set, { description: r.description, summary: r.snippet });
+      set.guideCopy = set.description;
+      locked.add('summary');
+      locked.add('guideCopy');
+      // The listing box's one line is written again from the new words, unless a person wrote it.
+      if (!place?.locked.includes('guideLine')) set.guideLine = null;
     }
   }
   if (Object.keys(set).length) {

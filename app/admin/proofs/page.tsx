@@ -52,7 +52,7 @@ async function Artwork({ p }: { p: Proof | null }) {
   );
 }
 
-const DETAIL: Record<string, string> = { phone: 'Phone', email: 'Email', website: 'Website', addressLine1: 'Address', parish: 'Parish', postcode: 'Postcode', openingHours: 'Hours', openMonths: 'Months open', summary: 'Summary (online)', description: 'Description (online)' };
+const DETAIL: Record<string, string> = { phone: 'Phone', email: 'Email', website: 'Website', addressLine1: 'Address', parish: 'Parish', postcode: 'Postcode', openingHours: 'Hours', openMonths: 'Months open', summary: 'Summary (online)', description: 'Their words (online: on taking, AI puts them in our voice and the guide entry is cut from them)' };
 
 /** A detail as a person reads it: hours and months in words, the rest as written, nothing as a dash. */
 function shown(k: string, v: unknown): string {

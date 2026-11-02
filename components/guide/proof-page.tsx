@@ -80,3 +80,32 @@ export function ProofPage({ subject, copy, picture, onFit }: { subject: ProofSub
     </div>
   );
 }
+
+/**
+ * A venue's entry as the guide would set it from the words given: at the
+ * size booked, or as a listing box on the grid of sixteen when nothing is
+ * booked. The copy is fitted as the guide fits it, the fullest run of
+ * whole sentences the frame takes; our editors write the printed words,
+ * so this shows the shape, not the final wording.
+ */
+export function GuidePreview({ venue, picture }: { venue: GuideVenue; picture: string }) {
+  const v = { ...venue, preview: picture };
+  const section = venueSection(v.section);
+  const body =
+    v.size === 'full' ? (
+      <VenueFullBody v={v} />
+    ) : v.size === 'listing' || v.size === 'directory' ? (
+      <div className="gp-content gp-grid gp-grid16 gp-venue-grid">
+        <VenueBox c={{ ...v, frame: 'listing' }} />
+      </div>
+    ) : (
+      <div className="gp-content gp-grid gp-grid8 gp-venue-grid">
+        <VenueBox c={{ ...v, frame: v.size as VenueFrame }} />
+      </div>
+    );
+  return (
+    <div className="guide-proof">
+      <Frame page={{ section, body }} n={1} />
+    </div>
+  );
+}

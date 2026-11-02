@@ -1,3 +1,5 @@
+import { hoursText, type WeekHours } from '@/lib/domain/opening';
+import { openMonthsText } from '@/lib/domain/format';
 import Link from 'next/link';
 import type { EventDate, ListingKind } from '@/lib/db/schema';
 import { requireStaff } from '@/lib/auth/session';
@@ -12,7 +14,7 @@ const ADMIN_PATH: Record<ListingKind, string> = { venue: '/admin/venues', event:
 
 const LABEL: Record<string, string> = {
   name: 'Name', title: 'Title', category: 'Type', addressLine1: 'Address', addressLine2: 'Address 2', parish: 'Parish', postcode: 'Postcode',
-  phone: 'Phone', email: 'Email', website: 'Website', summary: 'Summary', description: 'Description', placeId: 'Venue (theirs)',
+  openingHours: 'Opening hours', openMonths: 'Months open', headerImage: 'Picture', phone: 'Phone', email: 'Email', website: 'Website', summary: 'Summary', description: 'Description', placeId: 'Venue (theirs)',
   venueName: 'Venue', dates: 'Dates', fromPricePence: 'Price from', toPricePence: 'Price to', free: 'Free', duration: 'Duration', meetingPoint: 'Meeting point',
 };
 
@@ -22,6 +24,9 @@ function show(field: string, v: unknown): string {
   if (field.endsWith('PricePence')) return `£${((v as number) / 100).toFixed(2)}`;
   if (field === 'category') return CATEGORY_LABEL[v as keyof typeof CATEGORY_LABEL] ?? String(v);
   if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (field === 'openingHours') return hoursText(v as WeekHours) ?? '—';
+  if (field === 'openMonths') return ((v as number[]).length && openMonthsText(v as number[])) || 'All year';
+  if (field === 'headerImage') return (v as { url?: string }).url ?? '—';
   return String(v);
 }
 

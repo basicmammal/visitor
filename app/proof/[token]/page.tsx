@@ -67,7 +67,7 @@ export default async function ProofPage({ params, searchParams }: { params: Prom
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">{proof.edition} · editorial proof</p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-ink">{name}</h1>
       <p className="mt-2 max-w-2xl text-harbour/75">
-        This is your entry as it will print in the {proof.edition} edition of the Visitor Guide. Check the words and picture, change anything that needs it, tell us about your advert artwork, then approve it or send us your changes by {deadlineText(proof.deadline)}.
+        Your listing for the {proof.edition} edition of the Visitor Guide, in print and online. Check your picture, details, opening times and words, tell us about your advert artwork, then approve it or send us your changes by {deadlineText(proof.deadline)}.
       </p>
       {!direct && (
         <p className="mt-4 max-w-2xl rounded-md bg-white px-4 py-3 text-sm ring-1 ring-harbour/10">

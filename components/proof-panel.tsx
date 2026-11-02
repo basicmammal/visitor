@@ -2,6 +2,9 @@ import type { Proof } from '@/lib/db/schema';
 import { deadlineText } from '@/lib/domain/proof';
 import { webImage } from '@/lib/domain/images';
 import { ProofEditor } from '@/components/proof-editor';
+import { VenueEditor } from '@/components/venue-editor';
+
+const SPACE: Record<string, string> = { full: 'a full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page' };
 import { detailsOf, type ProofEntry, type ProofKey } from '@/lib/proofs';
 
 /**
@@ -25,6 +28,25 @@ export function ProofPanel({ proof, entry, proofKey }: { proof: Proof; entry: Pr
         ? `We kept your entry as it was${proof.reviewNote ? `: ${proof.reviewNote}` : ''}. You can send changes again until ${deadlineText(proof.deadline)}.`
         : undefined;
   const details = entry.kind === 'venue' ? { ...detailsOf(entry.listing), ...(waiting ? (proof.proposedDetails ?? {}) : {}) } : undefined;
+  const artwork = { plan: proof.artwork, files: proof.artworkFiles, due: proof.artworkDue ?? '' };
+  // A venue: the one form for its listing, the guide's words ours, written from theirs.
+  if (entry.kind === 'venue' && details)
+    return (
+      <VenueEditor
+        listingId={entry.listing.id}
+        proofKey={proofKey}
+        name={entry.listing.name}
+        venue={entry.venue}
+        booked={`${SPACE[entry.venue.size] ?? entry.venue.size} in ${proof.edition}`}
+        picture={image ? webImage(image, 900, 600) : ''}
+        details={details}
+        printCopy={entry.copy}
+        artwork={artwork}
+        deadline={deadlineText(proof.deadline)}
+        notice={notice}
+        answered={answered}
+      />
+    );
   return (
     <div className="space-y-4">
       <ProofEditor
