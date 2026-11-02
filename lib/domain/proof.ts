@@ -34,3 +34,17 @@ export function replyChanges(current: string, sent: string, picture: boolean): {
 export function deadlineText(iso: string): string {
   return new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
+
+/** Advert artwork: print files up to 50 MB, of the kinds a designer sends. */
+export const ARTWORK_MAX_BYTES = 50 * 1024 * 1024;
+export const ARTWORK_TYPES = ['.pdf', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.eps', '.ai', '.psd', '.indd', '.zip'];
+
+/** A file's place in the bucket: the proof's folder, a stamp, and its name made safe. */
+export function artworkPath(proofId: string, name: string, now = Date.now()): string {
+  const safe = name.normalize('NFKD').replace(/[^\w.\-]+/g, '_').replace(/_+/g, '_').slice(-120) || 'artwork';
+  return `proofs/${proofId}/${now}-${safe}`;
+}
+
+export const allowedArtwork = (name: string, size: number) =>
+  size > 0 && size <= ARTWORK_MAX_BYTES && ARTWORK_TYPES.some((t) => name.toLowerCase().endsWith(t));
+

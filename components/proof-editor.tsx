@@ -6,6 +6,7 @@ import { answerProof } from '@/app/proof/actions';
 import { ProofPage, type Fit, type ProofSubject } from '@/components/guide/proof-page';
 import { webSized } from '@/components/site/staff-edit';
 import { tidyCopy } from '@/lib/domain/proof';
+import { ProofArtwork, artworkFields, type ArtworkAnswer } from '@/components/proof-artwork';
 
 /**
  * The client's side of a proof: their entry as it will print, beside the
@@ -21,6 +22,7 @@ export function ProofEditor(props: {
   /** What they sent before, if they have answered already. */
   answered: 'approved' | 'changes' | null;
   deadline: string;
+  artwork: ArtworkAnswer;
 }) {
   const [copy, setCopy] = useState(props.copy);
   const [picture, setPicture] = useState(props.picture);
@@ -30,6 +32,8 @@ export function ProofEditor(props: {
   const [done, setDone] = useState<'approved' | 'changes' | null>(props.answered);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [artwork, setArtwork] = useState<ArtworkAnswer>(props.artwork);
+  const [uploading, setUploading] = useState(false);
   const onFit = useCallback((f: Fit) => setFit((was) => (was.fits === f.fits && (f.fits || (!was.fits && was.over === f.over)) ? was : f)), []);
 
   const changed = tidyCopy(copy) !== tidyCopy(props.copy) || !!file;
@@ -52,6 +56,7 @@ export function ProofEditor(props: {
       form.set('copy', copy);
       form.set('note', note);
       if (file) form.set('file', file);
+      artworkFields(form, artwork);
       const r = await answerProof(form);
       if (r.ok) setDone(r.status);
       else setError(r.error);
@@ -65,6 +70,15 @@ export function ProofEditor(props: {
         <p className="mt-2 text-harbour/75">
           {done === 'approved' ? 'Your entry will print as you saw it.' : 'Our editors will look over your changes and set them in your entry. We will be in touch if anything needs a word.'}
         </p>
+        {artwork.plan && (
+          <p className="mt-2 text-harbour/75">
+            {artwork.plan === 'sent'
+              ? `We have your artwork: ${artwork.files.map((f) => f.name).join(', ')}.`
+              : artwork.plan === 'coming'
+                ? `We’ll look out for your new artwork${artwork.due ? ` by ${new Date(`${artwork.due}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })}` : ''}.`
+                : 'Your advert will run as last time.'}
+          </p>
+        )}
         <button type="button" onClick={() => setDone(null)} className="mt-6 text-sm text-sea underline hover:text-brand">
           Look again or change something
         </button>
@@ -104,12 +118,16 @@ export function ProofEditor(props: {
           <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Anything else to change: a phone number, opening times…" className="mt-2 w-full rounded-md border border-harbour/20 p-3 text-[15px] focus:border-sea focus:outline-none focus:ring-2 focus:ring-sea/30" />
         </div>
 
+        <div className="border-t border-harbour/10 pt-6">
+          <ProofArtwork token={props.token} value={artwork} onChange={setArtwork} onBusy={setUploading} />
+        </div>
+
         {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-800">{error}</p>}
         {!fit.fits && changed && <p className="text-sm text-harbour/70">You can still send it: our editors will trim it to fit, or tell us in the note what matters most.</p>}
 
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={send} disabled={pending} className="rounded-full bg-harbour px-6 py-3 font-semibold text-white hover:bg-sea disabled:opacity-60">
-            {pending ? 'Sending…' : changed || note.trim() ? 'Send my changes' : 'Approve this entry'}
+          <button type="button" onClick={send} disabled={pending || uploading} className="rounded-full bg-harbour px-6 py-3 font-semibold text-white hover:bg-sea disabled:opacity-60">
+            {uploading ? 'Uploading artwork…' : pending ? 'Sending…' : changed || note.trim() ? 'Send my changes' : 'Approve this entry'}
           </button>
           {changed && (
             <button type="button" onClick={reset} className="inline-flex items-center gap-1 text-sm text-harbour/65 hover:text-brand">

@@ -5,6 +5,7 @@ import type { Proof } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
 import { deadlineText, linkWorks } from '@/lib/domain/proof';
 import { emailEnabled } from '@/lib/email/send';
+import { artworkDownloadUrl } from '@/lib/images/artwork';
 import { one, type SearchParams } from '@/lib/params';
 import { proofEditions, proofEntry, proofRecipients, type Recipient } from '@/lib/proofs';
 
@@ -30,6 +31,21 @@ function Status({ p }: { p: Proof | null }) {
       <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${s.tone}`}>{s.label}</span>
       <span className="ml-2 text-xs text-stone-500">{steps.join(' · ')}</span>
       {!linkWorks(p.deadline) && <span className="ml-2 text-xs text-red-700">link expired</span>}
+    </span>
+  );
+}
+
+/** Their advert: the files, each a link to download for the next hour, or what they said instead. */
+async function Artwork({ p }: { p: Proof | null }) {
+  if (!p?.artwork) return <span className="text-stone-400">{p?.repliedAt ? 'Not said' : '–'}</span>;
+  if (p.artwork === 'same') return <span className="text-stone-600">Same as last time</span>;
+  if (p.artwork === 'coming') return <span className="text-amber-800">Coming{p.artworkDue ? ` by ${deadlineText(p.artworkDue)}` : ''}</span>;
+  const links = await Promise.all(p.artworkFiles.map(async (f) => ({ f, url: await artworkDownloadUrl(f.path, f.name) })));
+  return (
+    <span className="flex flex-col gap-0.5">
+      {links.map(({ f, url }) =>
+        url ? <a key={f.path} href={url} className="text-emerald-800 underline hover:text-emerald-950">{f.name}</a> : <span key={f.path}>{f.name}</span>,
+      )}
     </span>
   );
 }
@@ -119,13 +135,14 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
         </nav>
       </div>
 
-      <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-6">
         {[
           ['Owed a proof', recipients.length],
           ['Sent', sent.length],
           ['Waiting', waiting],
           ['Signed off', sent.filter((r) => r.proof!.status === 'approved' || r.proof!.status === 'accepted').length],
           ['To review', toReview.length],
+          ['Artwork in', sent.filter((r) => r.proof!.artwork === 'sent').length],
         ].map(([k, v]) => (
           <div key={k} className="rounded bg-white p-3 ring-1 ring-stone-200"><dt className="text-stone-500">{k}</dt><dd className="text-xl font-semibold">{v}</dd></div>
         ))}
@@ -151,7 +168,7 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
             <div className="overflow-x-auto rounded bg-white ring-1 ring-stone-200">
               <table className="w-full text-sm">
                 <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-                  <tr><th className="p-2">Send</th><th className="p-2">Entry</th><th className="p-2">Space</th><th className="p-2">Email</th><th className="p-2">Where it stands</th></tr>
+                  <tr><th className="p-2">Send</th><th className="p-2">Entry</th><th className="p-2">Space</th><th className="p-2">Email</th><th className="p-2">Where it stands</th><th className="p-2">Artwork</th></tr>
                 </thead>
                 <tbody>
                   {recipients.map((r) => {
@@ -163,6 +180,7 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
                         <td className="p-2 text-stone-600">{SIZE[r.size] ?? r.size}</td>
                         <td className="p-2"><input type="email" name={`email:${key}`} defaultValue={r.proof?.email ?? r.email ?? ''} placeholder="Add an email" className="w-56 rounded border border-stone-300 px-2 py-1" /></td>
                         <td className="p-2"><Status p={r.proof} />{r.proof && <span className="ml-2 text-xs text-stone-500">reply by {deadlineText(r.proof.deadline)}</span>}</td>
+                        <td className="p-2 text-sm"><Artwork p={r.proof} /></td>
                       </tr>
                     );
                   })}

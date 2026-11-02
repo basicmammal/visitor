@@ -635,9 +635,19 @@ export const proofs = pgTable(
     reviewedBy: text('reviewed_by'),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     reviewNote: text('review_note'),
+    /** Their advert: new artwork sent, new artwork on its way, or the same as last time. Null until they say. */
+    artwork: text('artwork').$type<ArtworkPlan>(),
+    /** The files they sent, in the private artwork bucket. */
+    artworkFiles: jsonb('artwork_files').$type<ArtworkFile[]>().notNull().default([]),
+    /** When artwork they said was coming should reach us. */
+    artworkDue: date('artwork_due'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ onePerEdition: uniqueIndex('proofs_one_per_edition').on(t.edition, t.kind, t.listingId) }),
 );
 export type Proof = typeof proofs.$inferSelect;
+/** What a client says of their advert in a proof. */
+export const ARTWORK_PLANS = ['sent', 'coming', 'same'] as const;
+export type ArtworkPlan = (typeof ARTWORK_PLANS)[number];
+export type ArtworkFile = { path: string; name: string; size: number };

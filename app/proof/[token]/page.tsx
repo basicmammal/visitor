@@ -7,6 +7,7 @@ import '@fontsource/barlow-semi-condensed/700.css';
 import type { Metadata } from 'next';
 import { and, eq, isNull } from 'drizzle-orm';
 import { ProofEditor } from '@/components/proof-editor';
+import { ArtworkOnly } from '@/components/proof-artwork';
 import { Wordmark } from '@/components/site/wordmark';
 import { db } from '@/lib/db';
 import { proofs } from '@/lib/db/schema';
@@ -66,17 +67,21 @@ export default async function ProofPage({ params }: { params: Promise<{ token: s
   const picture = image ? webImage(image, 900, 600) : '';
   const answered = proof.status === 'approved' || proof.status === 'changes' ? proof.status : null;
   const done = proof.status === 'accepted' || proof.status === 'declined';
+  const artwork = { plan: proof.artwork, files: proof.artworkFiles, due: proof.artworkDue ?? '' };
 
   return (
     <Shell>
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">{proof.edition} · editorial proof</p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-ink">{name}</h1>
       <p className="mt-2 max-w-2xl text-harbour/75">
-        This is your entry as it will print in the {proof.edition} edition of the Visitor Guide. Check the words and picture, change anything that needs it, then approve it or send us your changes{done ? '' : ` by ${deadlineText(proof.deadline)}`}.
+        This is your entry as it will print in the {proof.edition} edition of the Visitor Guide. Check the words and picture, change anything that needs it, tell us about your advert artwork, then approve it or send us your changes{done ? '' : ` by ${deadlineText(proof.deadline)}`}.
       </p>
       <div className="mt-8">
         {done ? (
-          <p className="max-w-xl rounded-lg bg-white p-8 ring-1 ring-harbour/10">Our editors have set your entry for print. Reply to the email this came in if something still needs to change.</p>
+          <div className="space-y-6">
+            <p className="max-w-xl rounded-lg bg-white p-8 ring-1 ring-harbour/10">Our editors have set your entry for print. Reply to the email this came in if something still needs to change.</p>
+            <ArtworkOnly token={token} initial={artwork} />
+          </div>
         ) : (
           <ProofEditor
             token={token}
@@ -85,6 +90,7 @@ export default async function ProofPage({ params }: { params: Promise<{ token: s
             picture={picture}
             answered={answered}
             deadline={deadlineText(proof.deadline)}
+            artwork={artwork}
           />
         )}
       </div>

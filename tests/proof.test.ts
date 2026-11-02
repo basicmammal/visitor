@@ -22,3 +22,14 @@ describe('editorial proofs', () => {
     expect(deadlineText('2026-11-20')).toBe('Fri 20 Nov');
   });
 });
+
+describe('proof artwork', () => {
+  it('keeps each file in its proof’s folder under a safe name', async () => {
+    const { artworkPath, allowedArtwork } = await import('@/lib/domain/proof');
+    expect(artworkPath('abc', 'Rivoli Ad (FINAL) v2.pdf', 1)).toBe('proofs/abc/1-Rivoli_Ad_FINAL_v2.pdf');
+    expect(artworkPath('abc', '../../etc/passwd', 1)).toBe('proofs/abc/1-.._.._etc_passwd');
+    expect(allowedArtwork('advert.PDF', 20 * 1024 * 1024)).toBe(true);
+    expect(allowedArtwork('advert.exe', 1000)).toBe(false);
+    expect(allowedArtwork('huge.pdf', 60 * 1024 * 1024)).toBe(false);
+  });
+});

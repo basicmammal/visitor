@@ -133,6 +133,7 @@ export function proofEmail(input: { name: string; edition: string; deadline: str
         ? `A reminder that we still need your sign-off for ${input.name} in the ${input.edition} edition of the Visitor Guide.`
         : `Your entry for ${input.name} in the ${input.edition} edition of the Visitor Guide is ready for you to check.`,
       'The button below opens it exactly as it will print. You can change the words and the picture there, and see as you type whether it still fits; then approve it, or send us your changes.',
+      'If you have an advert in this edition, you can send us its new artwork on the same page, let us know new artwork is on its way, or tell us to run the same as last time.',
       `Please reply by ${input.deadline}. If we have not heard by then, it will print as it stands.`,
     ],
     { label: 'Check my entry', href: input.link },
