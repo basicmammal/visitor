@@ -5,7 +5,7 @@ import '@fontsource/barlow-semi-condensed/600.css';
 import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
 import { ProofPanel } from '@/components/proof-panel';
-import { detailsOf, openProofsFor, proofEntry } from '@/lib/proofs';
+import { detailsOf, openProofsFor, proofEntry, upcomingEditions } from '@/lib/proofs';
 import { VenueEditor } from '@/components/venue-editor';
 import { guideVenue } from '@/lib/domain/guide-entry';
 import { webImage } from '@/lib/domain/images';
@@ -93,6 +93,7 @@ export default async function EditListingPage({ params, searchParams }: { params
           </section>
         ) : (
           <VenueEditor
+            editions={upcomingEditions()}
             listingId={row.id}
             name={titleOf(row as never)}
             venue={guideVenue({ ...(row as unknown as Place), listingSize: BOOKED.includes((row as unknown as Place).listingSize as never) ? (row as unknown as Place).listingSize : 'listing' })}

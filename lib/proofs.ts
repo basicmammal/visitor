@@ -233,3 +233,9 @@ export async function declineProof(id: string, note: string | null, by: string) 
 
 /** A proof by its id, for staff. */
 export const proofsWith = (id: string) => db.select().from(proofs).where(eq(proofs.id, id));
+
+/** The editions still to come (or under way), soonest first: what a venue can ask for space in. */
+export function upcomingEditions(today = new Date()): string[] {
+  const iso = today.toISOString().slice(0, 10);
+  return proofEditions(today).filter((e) => e.window.to >= iso).slice(0, 4).map((e) => e.name);
+}

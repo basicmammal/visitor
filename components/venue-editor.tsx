@@ -4,7 +4,8 @@ import { CheckCircle2, ImagePlus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { answerProof, draftWords, saveVenueDetails } from '@/app/proof/actions';
 import type { ListingWords } from '@/lib/integrations/claude/listing-words';
-import { GuidePreview } from '@/components/guide/proof-page';
+import { GuidePreview, type PreviewSize } from '@/components/guide/proof-page';
+import { SpaceOptions } from '@/components/space-options';
 import { ProofArtwork, artworkFields, keyFields, type ArtworkAnswer } from '@/components/proof-artwork';
 import { ProofDetails } from '@/components/proof-details';
 import { webSized } from '@/components/site/staff-edit';
@@ -51,6 +52,8 @@ export function VenueEditor(props: {
   deadline?: string;
   notice?: string;
   answered?: 'approved' | 'changes' | 'saved' | null;
+  /** The editions a bigger space can be asked for in, soonest first. */
+  editions: string[];
 }) {
   const [details, setDetails] = useState(props.details);
   const [picture, setPicture] = useState(props.picture);
@@ -285,6 +288,16 @@ export function VenueEditor(props: {
           </div>
         </div>
       </section>
+
+      <SpaceOptions
+        venue={venue}
+        picture={picture}
+        words={ours.website || own}
+        current={props.venue.size === 'listing' || props.venue.size === 'directory' ? 'sixteenth' : (props.venue.size as PreviewSize)}
+        editions={props.editions}
+        listingId={props.listingId}
+        proofKey={props.proofKey}
+      />
     </div>
   );
 }

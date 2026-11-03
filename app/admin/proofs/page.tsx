@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { ProofRemindForm, ProofSendForm } from '@/components/admin/proof-send';
-import { takeProof, turnDownProof } from './actions';
+import { spaceRequestDone, takeProof, turnDownProof } from './actions';
+import { and, desc, eq } from 'drizzle-orm';
+import { db } from '@/lib/db';
+import { places, spaceRequests } from '@/lib/db/schema';
 import type { Proof } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
 import { hoursText, type WeekHours } from '@/lib/domain/opening';
@@ -146,6 +149,13 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
   const waiting = sent.filter((r) => r.proof!.status === 'sent' || r.proof!.status === 'opened').length;
   const toReview = sent.filter((r) => r.proof!.status === 'changes');
   const deadline = sent[0]?.proof?.deadline ?? '';
+  // Venues asking for more room, having seen their entry at that size: to follow up with a price.
+  const asks = await db
+    .select({ id: spaceRequests.id, edition: spaceRequests.edition, size: spaceRequests.size, email: spaceRequests.email, note: spaceRequests.note, createdAt: spaceRequests.createdAt, venue: places.name, slug: places.slug })
+    .from(spaceRequests)
+    .innerJoin(places, eq(places.id, spaceRequests.placeId))
+    .where(and(eq(spaceRequests.status, 'new')))
+    .orderBy(desc(spaceRequests.createdAt));
 
   return (
     <div className="space-y-8">
@@ -173,6 +183,27 @@ export default async function Proofs({ searchParams }: { searchParams: SearchPar
           <div key={k} className="rounded bg-white p-3 ring-1 ring-stone-200"><dt className="text-stone-500">{k}</dt><dd className="text-xl font-semibold">{v}</dd></div>
         ))}
       </dl>
+
+      {asks.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">Space requests <span className="text-sm font-normal text-stone-500">{asks.length}</span></h2>
+          <ul className="divide-y divide-stone-100 rounded bg-white text-sm ring-1 ring-stone-200">
+            {asks.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center gap-3 p-3">
+                <span className="font-medium">{a.venue}</span>
+                <span className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-800">{SIZE[a.size] ?? (a.size === 'eighth' ? '⅛ page' : a.size)} · {a.edition}</span>
+                <a href={`mailto:${a.email}`} className="text-stone-600 underline">{a.email}</a>
+                {a.note && <span className="text-stone-600">“{a.note}”</span>}
+                <span className="text-xs text-stone-400">{when(a.createdAt)}</span>
+                <form action={spaceRequestDone} className="ml-auto">
+                  <input type="hidden" name="id" value={a.id} />
+                  <button type="submit" className="rounded border border-stone-300 px-2 py-1 text-xs hover:bg-stone-100">Done</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {toReview.length > 0 && (
         <section className="space-y-3">

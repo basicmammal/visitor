@@ -5,7 +5,7 @@ import { ProofEditor } from '@/components/proof-editor';
 import { VenueEditor } from '@/components/venue-editor';
 
 const SPACE: Record<string, string> = { full: 'a full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page' };
-import { detailsOf, type ProofEntry, type ProofKey } from '@/lib/proofs';
+import { detailsOf, upcomingEditions, type ProofEntry, type ProofKey } from '@/lib/proofs';
 
 /**
  * A proof to answer: the entry as the edition prints it, the words and
@@ -33,6 +33,7 @@ export function ProofPanel({ proof, entry, proofKey }: { proof: Proof; entry: Pr
   if (entry.kind === 'venue' && details)
     return (
       <VenueEditor
+        editions={upcomingEditions()}
         listingId={entry.listing.id}
         proofKey={proofKey}
         name={entry.listing.name}

@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { requireStaff } from '@/lib/auth/session';
+import { db } from '@/lib/db';
+import { spaceRequests } from '@/lib/db/schema';
 import { refreshSite } from '@/lib/refresh';
 import { tidyCopy } from '@/lib/domain/proof';
 import { acceptProof, declineProof, issueProofs, proofsWith, remindProofs, type SendResult } from '@/lib/proofs';
@@ -59,5 +62,13 @@ export async function turnDownProof(form: FormData) {
   const user = await requireStaff();
   const id = z.string().uuid().parse(form.get('id'));
   await declineProof(id, String(form.get('note') ?? '').trim() || null, user.email);
+  revalidatePath('/admin/proofs');
+}
+
+/** A space request followed up: off the list. */
+export async function spaceRequestDone(form: FormData) {
+  await requireStaff();
+  const id = z.string().uuid().parse(form.get('id'));
+  await db.update(spaceRequests).set({ status: 'done', doneAt: new Date() }).where(eq(spaceRequests.id, id));
   revalidatePath('/admin/proofs');
 }

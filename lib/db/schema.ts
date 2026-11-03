@@ -669,3 +669,25 @@ export type ProofDetails = Partial<{
   description: string | null;
   ownWords: string | null;
 }>;
+
+/** The sizes a venue can ask for in the guide, beyond the listing box every venue has free. */
+export const SPACE_SIZES = ['eighth', 'quarter', 'half', 'three-quarters', 'full'] as const;
+export type SpaceSize = (typeof SPACE_SIZES)[number];
+
+/**
+ * A venue asking for more room in an edition of the guide, from its own
+ * form, having seen its entry at that size. Staff follow up with the
+ * price and the booking; they mark it done when it is dealt with.
+ */
+export const spaceRequests = pgTable('space_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  placeId: uuid('place_id').notNull().references(() => places.id, { onDelete: 'cascade' }),
+  edition: text('edition').notNull(),
+  size: text('size').$type<SpaceSize>().notNull(),
+  email: text('email').notNull(),
+  note: text('note'),
+  status: text('status').$type<'new' | 'done'>().notNull().default('new'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  doneAt: timestamp('done_at', { withTimezone: true }),
+});
+export type SpaceRequest = typeof spaceRequests.$inferSelect;

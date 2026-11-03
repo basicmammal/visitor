@@ -2,11 +2,15 @@
 
 import { and, eq } from 'drizzle-orm';
 import { getUser } from '@/lib/auth/session';
+import { staffAddresses } from '@/lib/claims';
+import { sendEmail } from '@/lib/email/send';
+import { spaceRequestEmail } from '@/lib/email/templates';
+import { env } from '@/lib/env';
 import { canEditListing } from '@/lib/auth/roles';
 import { rewriteListing } from '@/lib/integrations/claude/rewrite';
 import { listingWords, type ListingWords } from '@/lib/integrations/claude/listing-words';
 import { db } from '@/lib/db';
-import { ARTWORK_PLANS, listingChanges, places, proofs, type ArtworkFile, type ArtworkPlan, type Image, type Proof } from '@/lib/db/schema';
+import { ARTWORK_PLANS, SPACE_SIZES, listingChanges, places, proofs, spaceRequests, type SpaceSize, type ArtworkFile, type ArtworkPlan, type Image, type Proof } from '@/lib/db/schema';
 import { allowedArtwork, artworkPath, artworkUploadUrl } from '@/lib/images/artwork';
 import { detailsChanges, linkWorks, replyChanges } from '@/lib/domain/proof';
 import { storeListingImage } from '@/lib/images/upload';
@@ -204,4 +208,46 @@ export async function draftWords(input: { key?: ProofKey; listingId?: string; te
   }
   if (!name || !text.trim()) return null;
   return listingWords({ name, text, printMax: Math.min(2500, Math.max(60, input.room || 400)) });
+}
+
+const SIZE_WORDS: Record<SpaceSize, string> = { eighth: 'an eighth of a page', quarter: 'a quarter page', half: 'a half page', 'three-quarters': 'a three-quarter page', full: 'a full page' };
+
+/**
+ * A venue asking for more room in an edition, from its form: kept for
+ * staff, who are told by email and follow up with the price. From the
+ * owner, signed in, or the holder of the venue's proof link.
+ */
+export async function requestSpace(form: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
+  const size = String(form.get('size') ?? '') as SpaceSize;
+  const edition = String(form.get('edition') ?? '');
+  if (!(SPACE_SIZES as readonly string[]).includes(size) || !/^(Spring|Summer|Autumn|Winter) \d{4}$/.test(edition)) return { ok: false, error: 'Choose a size and an edition.' };
+  const note = String(form.get('note') ?? '').trim().slice(0, 1000) || null;
+
+  let place: { id: string; name: string } | null = null;
+  let email: string | null = null;
+  const key = keyOf(form);
+  if (key.token || key.proofId) {
+    const proof = await proofFor(key);
+    if (proof?.kind === 'venue') {
+      const [p] = await db.select({ id: places.id, name: places.name }).from(places).where(eq(places.id, proof.listingId));
+      place = p ?? null;
+      email = proof.email;
+    }
+  } else {
+    const user = await getUser();
+    const id = String(form.get('listingId') ?? '');
+    if (user && /^[0-9a-f-]{36}$/.test(id)) {
+      const [p] = await db.select({ id: places.id, name: places.name, businessId: places.businessId }).from(places).where(eq(places.id, id));
+      if (p && canEditListing(user, p)) {
+        place = p;
+        email = user.email;
+      }
+    }
+  }
+  if (!place || !email) return { ok: false, error: 'Sign in again to ask.' };
+
+  await db.insert(spaceRequests).values({ placeId: place.id, edition, size, email, note });
+  const to = await staffAddresses();
+  if (to.length) await sendEmail({ to, replyTo: email, ...spaceRequestEmail({ venue: place.name, size: SIZE_WORDS[size], edition, email, note, link: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/admin/proofs` }) });
+  return { ok: true };
 }

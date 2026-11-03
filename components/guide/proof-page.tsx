@@ -21,7 +21,7 @@ function measure(page: HTMLElement, copy: string): Fit {
   ghost.style.cssText += ';position:absolute;left:-10000px;top:0;visibility:hidden;';
   document.body.appendChild(ghost);
   try {
-    const frame = ghost.querySelector<HTMLElement>('[data-measure]') ?? ghost.querySelector<HTMLElement>('.gp-content');
+    const frame = ghost.querySelector<HTMLElement>('.gp-venue-text') ?? ghost.querySelector<HTMLElement>('[data-measure]') ?? ghost.querySelector<HTMLElement>('.gp-content');
     const words = ghost.querySelector<HTMLElement>(COPY);
     if (!frame || !words) return { fits: true };
     const over = () => frame.scrollHeight > frame.clientHeight + 1;
@@ -88,7 +88,7 @@ export function ProofPage({ subject, copy, picture, onFit }: { subject: ProofSub
  * whole sentences the frame takes; our editors write the printed words,
  * so this shows the shape, not the final wording.
  */
-export function GuidePreview({ venue, picture, sample, onCapacity }: { venue: GuideVenue; picture: string; sample?: string; onCapacity?: (chars: number) => void }) {
+export function GuidePreview({ venue, picture, sample, onCapacity, as }: { venue: GuideVenue; picture: string; sample?: string; onCapacity?: (chars: number) => void; as?: PreviewSize }) {
   const ref = useRef<HTMLDivElement>(null);
   const [fonts, setFonts] = useState(false);
   useLayoutEffect(() => {
@@ -101,16 +101,22 @@ export function GuidePreview({ venue, picture, sample, onCapacity }: { venue: Gu
   }, [venue, picture, fonts, sample, onCapacity]);
   const v = { ...venue, preview: picture };
   const section = venueSection(v.section);
+  // The size shown: the one asked for, else the venue's own; an eighth is a listing box on the grid of eight, a sixteenth on the grid of sixteen.
+  const size: PreviewSize = as ?? (v.size === 'listing' || v.size === 'directory' ? 'sixteenth' : (v.size as PreviewSize));
   const body =
-    v.size === 'full' ? (
+    size === 'eighth' ? (
+      <div className="gp-content gp-grid gp-grid8 gp-venue-grid">
+        <VenueBox c={{ ...v, frame: 'listing' }} />
+      </div>
+    ) : size === 'full' ? (
       <VenueFullBody v={v} />
-    ) : v.size === 'listing' || v.size === 'directory' ? (
+    ) : size === 'sixteenth' ? (
       <div className="gp-content gp-grid gp-grid16 gp-venue-grid">
         <VenueBox c={{ ...v, frame: 'listing' }} />
       </div>
     ) : (
       <div className="gp-content gp-grid gp-grid8 gp-venue-grid">
-        <VenueBox c={{ ...v, frame: v.size as VenueFrame }} />
+        <VenueBox c={{ ...v, frame: size as VenueFrame }} />
       </div>
     );
   return (
@@ -119,6 +125,9 @@ export function GuidePreview({ venue, picture, sample, onCapacity }: { venue: Gu
     </div>
   );
 }
+
+/** The sizes a venue's entry can be shown at, smallest first. */
+export type PreviewSize = 'sixteenth' | 'eighth' | 'quarter' | 'half' | 'three-quarters' | 'full';
 
 /** The most characters of text like theirs the frame holds, found by halving on a copy of the page off screen. */
 function capacity(page: HTMLElement, sample: string): number {

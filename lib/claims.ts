@@ -103,7 +103,7 @@ async function listingTitle(kind: ListingKind, id: string): Promise<string | nul
 }
 
 /** Who hears about claims: STAFF_NOTIFY_EMAILS, else every staff account still switched on. */
-async function staffAddresses(): Promise<string[]> {
+export async function staffAddresses(): Promise<string[]> {
   const listed = env.STAFF_NOTIFY_EMAILS?.split(',').map((s) => s.trim()).filter(Boolean);
   if (listed?.length) return listed;
   const staff = await db.select({ email: users.email, role: users.role, disabledAt: users.disabledAt }).from(users);

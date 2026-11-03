@@ -106,7 +106,8 @@ function useFit(copies: string[], droppable: boolean, strict = false) {
     setPick(0);
   }
   useLayoutEffect(() => {
-    const el = ref.current;
+    // A quarter's words sit in a column beside its picture: that column is the frame.
+    const el = ref.current?.querySelector<HTMLElement>('.gp-venue-text') ?? ref.current;
     if (!el) return;
     const over = el.scrollHeight > el.clientHeight + 1;
     if (over && pick < options.length - 1) setPick(pick + 1);

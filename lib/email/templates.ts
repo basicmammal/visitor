@@ -140,3 +140,17 @@ export function proofEmail(input: { name: string; edition: string; deadline: str
     'The link is yours alone: no password needed. It works until a week after the deadline.',
   );
 }
+
+/** To staff: a venue asking for more room in an edition, having seen its entry at that size. */
+export function spaceRequestEmail(input: { venue: string; size: string; edition: string; email: string; note: string | null; link: string }) {
+  return compose(
+    `Space request: ${input.venue}, ${input.size} in ${input.edition}`,
+    [
+      `${input.venue} would like ${input.size} in the ${input.edition} edition of the guide.`,
+      `Asked by ${input.email}.`,
+      ...(input.note ? [`Their note: ${input.note}`] : []),
+      'Reply to them with the price and to book it.',
+    ],
+    { label: 'Open the requests', href: input.link },
+  );
+}
