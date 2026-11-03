@@ -111,6 +111,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <a href={`/admin/guide/export/tours.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tours</a>
           <a href={`/admin/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
           <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
+          <Link href="/admin/guide/maps" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Maps</Link>
         </div>
         {leftOut.length > 0 && (
           <details className="text-xs text-stone-600">

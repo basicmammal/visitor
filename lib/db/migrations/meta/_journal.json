@@ -232,6 +232,13 @@
       "when": 1793741974711,
       "tag": "0032_place_new_in",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793745080597,
+      "tag": "0033_map_entries",
+      "breakpoints": true
     }
   ]
 }

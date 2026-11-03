@@ -48,62 +48,24 @@ For the next session. Read this first, then `README.md` and `docs/deploy.md`.
   then previews of the website card and the guide entry, and every size they could book.
 - **New this season** (Admin > New): pick places new to the jersey.com feed per edition.
 
-## In progress: map pages (not started in code)
+## Map pages (built, not yet deployed)
 
-The owner wants the guide's two map pages recreated, drawn from **OpenStreetMap** and styled
-like the old ones, with an index generated from our data.
+Admin > Guide > **Maps** (`/admin/guide/maps`): the island map and St Helier, each a spread drawn
+from OpenStreetMap, with the entries to edit beneath (add a venue or a named pin, reorder, name it
+on the map, set a pin), an index CSV and an SVG of the artwork for InDesign.
 
-**Blocker**: the sandbox could not fetch OSM data. `overpass-api.de` and
-`download.geofabrik.de` were added to the environment's allowed domains, but connections were
-reset mid-transfer (`ws_closed_mid_exchange`). Check first, in the new session:
-
-```
-curl -sS -m 60 -o /dev/null -w '%{http_code}\n' "https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(49.18,-2.13,49.19,-2.10)%5Bamenity%3Dcafe%5D%3Bout%201%3B"
-```
-
-If it still fails, report it as a proxy problem; do not fetch it via Railway.
-
-**The old maps** (Summer 2026 package on Drive, folder `1iiIh_ZFFCiyTfxzU40DQ60CRZDZvtSsp`):
-
-- *Island map* (`vjvg_island map details_26_1.idml`, art `vjvm_island_map_*.ai`): six colour-coded
-  categories, each numbered 1 to 10, an index column per category, numbered markers on the map,
-  a dozen with a label on the map ("1. Valley Adventure"), National Park areas in green,
-  Les Écréhous and Les Minquiers noted. Index (mirror it, per the owner):
-  - Attractions: Jersey Zoo, Jersey War Tunnels, C.I. Military Museum, La Mare Wine Estate,
-    Eric Young Orchid Foundation, Pallot Steam Museum, Jersey Lavender, Jersey Museum,
-    Samarès Manor, Maritime Museum
-  - Heritage/culture: Hamptonne, Elizabeth Castle, Mont Orgueil, Maritime Museum, La Hougue Bie,
-    Tesson Mill, Le Moulin de Quétivel, Wetland Centre, Grosnez Castle, Corbière Lighthouse
-  - Shopping: Catherine Best, Jersey Pearl, Les Quesnes Garden Centre, The Trading Point,
-    Harbour Gallery, Jane James, The Old Sail Loft, The Surfyard, Acorn Enterprises,
-    St Peter's Garden Centre
-  - Restaurants: Indigo's, The Moorings, Sumas, The Poplars Tea Room, The Windmill, The Loft,
-    El Tico, Watersplash, Ocean Restaurant, Le Braye
-  - Activity: Valley Adventures, Jersey Duchess, RIB Trips, Jersey Sea Sport Centre,
-    Splash Surf Centre, Jersey Surf School, Absolute Adventures, Jersey Bowl, Jump Jersey,
-    Les Mielles
-  - Pubs: Old Court House Inn, Trinity Arms, St Mary's Pub, The Seymour, The Dolphin,
-    The Beaumont Inn, Old Smugglers Inn, Farmers Inn, Victoria in the Valley, The Rozel
-  - Matching to `places`: 51 of 60 match a venue with a location. Not in the database: Tesson
-    Mill, St Mary's Pub, Farmers Inn, Victoria in the Valley, The Old Sail Loft, The Surfyard,
-    Acorn Enterprises, St Peter's Garden Centre (map entries need their own pin). No location:
-    Indigo's, Les Quesne Garden Centre. Ambiguous: RIB Trips, Surf School, The Dolphin,
-    The Beaumont, Jersey Pearl (use the main site, not King Street), Les Mielles (golf club).
-- *St Helier map* (`vjvg_26_1_sthelier map details.idml`, art `vmj_layout_front_2026.pdf`, the
-  Visit Jersey VisitorMap's St Helier panel): grid A–M by 1–11, a "Place locator" index in two
-  columns by category (Shopping, Heritage & Culture, Activity & Travel, Restaurants, Bars,
-  Coffees & Cakes, Pubs) with grid refs, and a King Street / Queen Street shopping inset. The
-  owner said: **start it from the booked clients in St Helier** (space booked in the edition),
-  by category, with grid refs; staff add others later. The art PDFs are over the 10 MB Drive
-  download limit, so the old list could not be read.
-
-**Plan agreed**: fetch Jersey's OSM data once (coastline, land use, parks, roads by class,
-St Helier streets and buildings) and save it in the repo; render both maps as SVG in the
-guide's page frame, styled like the old ones; a `map_entries`-style table (map, category,
-position, place or own pin, label, labelled-on-map) seeded as above; generate the numbered
-index (island) and grid references (St Helier) from coordinates; an admin page per map to add,
-remove and reorder; the pages in Admin > Guide and an export for InDesign. Attribution:
-"© OpenStreetMap contributors".
+- **Data**: the sandbox cannot reach OSM, so `.github/workflows/fetch-osm.yml` downloads Geofabrik's
+  `guernsey-jersey` extract on GitHub and commits it to `data/osm/` (run it by hand to refresh).
+  `pnpm maps:build` (needs `pip install osmium`) turns it into `lib/maps/island.json` and
+  `lib/maps/st-helier.json`: layers pre-projected to mm (`lib/domain/map-frame.ts`).
+- **Entries**: table `map_entries` (migration 0033). The island starts from the Summer 2026 index
+  with the "Start from the Summer 2026 index" button (`lib/domain/map-seed.ts`); St Helier from
+  "Add booked venues" for an edition. Numbers are the order in each category; grid refs (A–M, 1–11)
+  come from position.
+- **Still to pin** on the island (not in our data or OSM): The Old Sail Loft, The Surfyard,
+  Acorn Enterprises, Indigo's. The admin page lists them in amber.
+- **Not done**: the King Street / Queen Street inset; the map spreads are not yet placed among the
+  guide's own pages (they render on their own page with a chosen folio, `?page=`).
 
 ## Loose ends
 

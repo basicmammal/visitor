@@ -18,6 +18,7 @@
     "auth:create-user": "tsx scripts/auth-create-user.ts",
     "seed:provider-codes": "tsx scripts/seed-provider-codes.ts",
     "tag:venues": "tsx scripts/tag-venues.ts",
+    "maps:build": "python3 scripts/osm/extract.py && tsx scripts/osm/build.ts",
     "email:weekly": "tsx scripts/send-weekly.ts"
   },
   "dependencies": {

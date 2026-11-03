@@ -693,3 +693,32 @@ export const spaceRequests = pgTable('space_requests', {
   doneAt: timestamp('done_at', { withTimezone: true }),
 });
 export type SpaceRequest = typeof spaceRequests.$inferSelect;
+
+/** The guide's two maps: the island, and St Helier's streets. */
+export const MAPS = ['island', 'st-helier'] as const;
+export type MapName = (typeof MAPS)[number];
+
+/**
+ * An entry on one of the guide's maps: a numbered marker and its line in
+ * the index (island), or a grid reference in the place locator (St Helier).
+ * Usually a venue we list, placed where it is; one we do not list has a pin
+ * of its own (lat, lon), which also moves a listed venue's marker when set.
+ * Ours.
+ */
+export const mapEntries = pgTable('map_entries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  map: text('map').$type<MapName>().notNull(),
+  /** The index's heading: Attractions, Heritage/culture, Shopping… */
+  category: text('category').notNull(),
+  /** Its order in its category, from 1: the number it prints. */
+  position: integer('position').notNull(),
+  placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
+  /** The name as it prints; the venue's name when empty. */
+  label: text('label'),
+  lat: doublePrecision('lat'),
+  lon: doublePrecision('lon'),
+  /** Named beside its marker on the map itself, not only in the index. */
+  labelled: boolean('labelled').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+export type MapEntry = typeof mapEntries.$inferSelect;

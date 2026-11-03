@@ -248,3 +248,21 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-new-kind { display: block; font-family: var(--gp-sans); font-weight: 800; font-size: 6pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-accent); }
 .gp-new-row b { font-weight: 700; font-size: 9pt; color: var(--gp-ink); }
 .gp-new-line { margin: 0.4mm 0; }
+
+/* The guide's maps (components/guide/maps.tsx): spread artwork laid across two pages. */
+.gm-spread { position: absolute; top: 0; width: 230mm; height: 165mm; font-family: var(--gp-cond); }
+.gm-spread > svg.gp-map { position: absolute; left: 0; top: 0; }
+.gm-index { position: absolute; display: flex; gap: 3mm; }
+.gm-island-index { top: 7mm; }
+.gm-col { width: 31mm; }
+.gm-col h4 { font-family: var(--gp-sans); font-weight: 800; font-size: 6pt; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.8mm; }
+.gm-col ol { list-style: none; margin: 0; padding: 0; }
+.gm-col li { display: flex; align-items: center; gap: 1mm; font-size: 6.5pt; line-height: 1.2; margin-bottom: 0.2mm; }
+.gm-num { flex: none; width: 2.9mm; height: 2.9mm; border-radius: 50%; color: white; font-weight: 700; font-size: 5pt; display: inline-flex; align-items: center; justify-content: center; }
+.gm-ref { margin-left: auto; font-weight: 700; }
+.gm-missing { color: #c00; text-decoration: underline dotted; }
+.gm-note { position: absolute; margin: 0; font-size: 6pt; font-style: italic; color: #3f7891; text-align: right; }
+.gm-locator { left: 192mm; top: 8mm; width: 30mm; flex-direction: column; gap: 2mm; }
+.gm-locator h3 { font-family: var(--gp-sans); font-weight: 800; font-size: 8pt; margin: 0; }
+.gm-locator .gm-col { width: 30mm; }
+@media print { .gm-missing { color: inherit; text-decoration: none; } }
