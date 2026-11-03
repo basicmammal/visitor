@@ -250,7 +250,8 @@ export function VenueFullBody({ v }: { v: GuideVenue }) {
 export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean }) {
   const contact = [c.address, c.phone].filter(Boolean).join(' · ');
   // Where it is, apart, so the grid of sixteen's small boxes can leave it to the area marker.
-  const where = c.address && c.phone ? <span className="gp-venue-where-line">{c.address} · </span> : c.address;
+  // Where it is, then the phone on a line of its own; the grid of sixteen's small boxes leave the address to the area marker.
+  const where = c.address && c.phone ? <span className="gp-venue-where-line">{c.address}<br /></span> : c.address;
   const { ref, copy, keep, overset } = useFit(strict ? [c.copy] : c.options.length ? c.options : [c.copy], !!contact, strict);
   const text = (
     <>
