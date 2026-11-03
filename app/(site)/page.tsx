@@ -24,6 +24,10 @@ import { JsonLd } from '@/components/site/json-ld';
 import { SubscribePopover } from '@/components/site/subscribe-popover';
 import { emailEnabled } from '@/lib/email/send';
 import { organisation } from '@/lib/agents/schema-org';
+import { and, eq, ne } from 'drizzle-orm';
+import { db } from '@/lib/db';
+import { places as placesTable } from '@/lib/db/schema';
+import { editions } from '@/lib/guide';
 
 // Drawn ahead and again every ten minutes, each time with a fresh pick of stories.
 export const revalidate = 600;
@@ -116,6 +120,24 @@ export default async function Home() {
       image: e.headerImage!,
     }));
 
+  // New this season: the places staff featured for the edition now in hand.
+  const season = [...editions(Number(today.slice(0, 4)) - 1), ...editions(Number(today.slice(0, 4)))].find((e) => e.window.from <= today && e.window.to >= today)?.name;
+  const fresh = season ? await db.select().from(placesTable).where(and(eq(placesTable.newIn, season), ne(placesTable.inclusion, 'excluded'), eq(placesTable.review, 'approved'))) : [];
+  const newStories: Story[] = fresh
+    .filter((v) => printable(v.headerImage))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 4)
+    .map((v) => ({
+      key: v.id,
+      kicker: CATEGORY_LABEL[v.category],
+      kickerHref: `/venues?category=${v.category}`,
+      title: v.name,
+      href: `/venues/${v.slug}`,
+      meta: printParish(v.parish),
+      blurb: standfirst(v.summary ?? v.guideCopy ?? v.description, 140),
+      image: v.headerImage!,
+    }));
+
   // Places: those the guide writes about, with a picture.
   const placeStories: Story[] = onePerGroup(
     PLACE_SECTIONS.map((c) => [c, places.filter((v) => v.category === c && printable(v.headerImage) && (v.guideCopy || v.recommendedIn))] as const),
@@ -150,6 +172,8 @@ export default async function Home() {
         <StorySpread title="Tours & experiences" intro="Out with a local guide, on foot, by boat or by bike." more={{ label: 'All tours & experiences', href: '/tours' }} stories={tourStories} cards />
 
         <StorySpread title="Exhibitions" intro="On now in Jersey’s galleries and museums." more={{ label: 'Everything on, ongoing too', href: '/whats-on?ongoing=1' }} stories={exhibitionStories} cards />
+
+        <StorySpread title="New this season" intro="Opened in the last few months: new places to eat, shop, stay and explore." more={{ label: 'All venues', href: '/venues' }} stories={newStories} cards />
 
         <StorySpread title="Places to go" intro="From the pages of the Visitor Guide." more={{ label: 'All venues', href: '/venues' }} stories={placeStories} cards />
       </div>

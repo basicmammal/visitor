@@ -242,3 +242,9 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-ahead-line { margin: 0.3mm 0; }
 .gp-ahead-contact { color: var(--gp-ink80); font-style: italic; font-size: 7pt; }
 .gp-ahead-thumb { width: 16mm; height: 16mm; object-fit: cover; }
+.gp-new-row { display: grid; grid-template-columns: 24mm 1fr; column-gap: 3mm; padding: 2mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; align-items: start; }
+.gp-new-row.gp-new-bare { grid-template-columns: 1fr; }
+.gp-new-thumb { width: 24mm; height: 18mm; object-fit: cover; }
+.gp-new-kind { display: block; font-family: var(--gp-sans); font-weight: 800; font-size: 6pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-accent); }
+.gp-new-row b { font-weight: 700; font-size: 9pt; color: var(--gp-ink); }
+.gp-new-line { margin: 0.4mm 0; }

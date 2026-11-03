@@ -3,7 +3,7 @@
 import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
-import type { GuideProvider, LookingAhead } from '@/lib/guide';
+import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
 import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
@@ -27,6 +27,7 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
 export type Section = { name: string; colour: string };
 export const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
 const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
+const NEW: Section = { name: 'New this season', colour: '#e5007e' };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
 export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
@@ -296,6 +297,22 @@ function AheadRow({ r }: { r: LookingAhead }) {
   );
 }
 
+/** A place new this season: its picture, what kind of place, its name and a line about it, and where and how to reach it. */
+function NewRow({ r }: { r: NewPlace }) {
+  return (
+    <div className={`gp-new-row${r.thumb ? '' : ' gp-new-bare'}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {r.thumb && <img src={r.thumb} alt="" className="gp-new-thumb" />}
+      <div>
+        {r.section && <span className="gp-new-kind">{r.section}</span>}
+        <b>{r.name}</b>
+        {r.line && <p className="gp-new-line">{r.line}</p>}
+        <p className="gp-ahead-contact">{[r.address, r.phone, r.website].filter(Boolean).join(' · ')}</p>
+      </div>
+    </div>
+  );
+}
+
 /** An activity in Do: its name, its short piece, and the markers of the providers who offer it, found in the index. */
 function DoBoxCell({ b, mixed }: { b: DoBox; mixed: boolean }) {
   const { ref, copy, overset } = useFit([b.blurb], false);
@@ -424,6 +441,8 @@ export function GuideBook(props: {
   venueSections: VenueSection[];
   /** The attractions closed for part of the edition, after Visit's pages; none in summer. */
   lookingAhead?: LookingAhead[];
+  /** Places new this season, on pages of their own before the venue sections. */
+  newThisSeason?: NewPlace[];
   /** Do's activities and providers' key, after Do's venue pages. */
   doSection?: DoSection | null;
   firstPage: number;
@@ -483,6 +502,16 @@ export function GuideBook(props: {
     ];
   });
   const [aheadPages, measuringAhead] = usePoured(aheadFlow);
+  // New this season flows the same way: its heading and a word on it, then the places.
+  const [newFlow] = useState<Flow[]>(() => {
+    const rows = props.newThisSeason ?? [];
+    if (!rows.length) return [];
+    return [
+      { key: 'new-h', heading: true, node: <div><h3 className="gp-key-heading">New this season</h3><p className="gp-ahead-intro">Opened since our last edition: new places to eat, shop, stay and explore.</p></div> },
+      ...rows.map((r) => ({ key: `new-${r.name}`, node: <NewRow r={r} /> })),
+    ];
+  });
+  const [newPages, measuringNew] = usePoured(newFlow);
   // Poured a column at a time; two columns to a page, each section's index from a fresh page.
   const [dirColumns, measuringDir] = usePoured(dirFlow, true);
   const dirPages: Flow[][][] = [];
@@ -545,6 +574,12 @@ export function GuideBook(props: {
         ),
       });
     }
+  }
+
+  // New this season, from a left-hand page, ahead of the venue sections.
+  if (newPages?.length) {
+    if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: pages.at(-1)?.section ?? NEW, body: <div className="gp-content" /> });
+    for (const items of newPages) pages.push({ section: NEW, body: <div className="gp-content gp-flow gp-ahead">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
   }
 
   // The venue sections, each from a left-hand page and running on: full pages, grid pages, then the directory. Each page keys the areas on it.
@@ -618,6 +653,7 @@ export function GuideBook(props: {
       {measuringDir}
       {measuringDo}
       {measuringAhead}
+      {measuringNew}
       {!tourPages && tours.length > 0 && <p className="no-print text-sm text-stone-500">Laying out the tours…</p>}
       {spreads.map((pair, i) => (
         <div key={i} className="gp-spread">

@@ -140,7 +140,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayout={layouts.tours} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} firstPage={firstPage} />
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayout={layouts.tours} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
 
     </>
   );

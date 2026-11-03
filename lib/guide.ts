@@ -1,7 +1,7 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, ne } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
-import { doActivities, type Provider } from '@/lib/db/schema';
+import { doActivities, places, type Provider } from '@/lib/db/schema';
 import { doSection, type DoSection } from '@/lib/domain/do-section';
 import { openingText, reopensIn, windowMonths } from '@/lib/domain/opening';
 import { usableLine } from '@/lib/domain/venue-line';
@@ -26,7 +26,7 @@ import {
   type VenueSection,
   type Window,
 } from '@/lib/domain/guide-entry';
-import { printContact, printWebsite } from '@/lib/domain/house-style';
+import { printContact, printParish, printWebsite } from '@/lib/domain/house-style';
 import { fillCodes } from '@/lib/domain/provider-code';
 import { nonCore, withCategories } from '@/lib/domain/categorise';
 
@@ -59,11 +59,18 @@ export function windowFrom(params: { from?: string; to?: string }): Window {
 export type GuideProvider = { code: string; name: string; contact: string; website: string };
 
 /** An attraction closed for part of the edition: when it opens again, and how to reach it. */
+/** A place new this season, as its page prints it: what it is, a line about it, a picture, and how to find it. */
+export type NewPlace = { name: string; section: string; line: string; thumb: string; imageUrl: string; address: string; phone: string; website: string };
+
+const SECTION_LABEL: Record<string, string> = { 'eat-drink': 'Eat', see: 'Visit', do: 'Do', shop: 'Buy', stay: 'Stay' };
+
 export type LookingAhead = { name: string; reopens: number; line: string; thumb: string; opening: string; phone: string; website: string };
 
 export type Guide = {
   /** The attractions closed for part of the edition, in the order they open again; none in summer. */
   lookingAhead: LookingAhead[];
+  /** Places new this season, picked by staff: a page of their own before the venue sections. */
+  newThisSeason: NewPlace[];
   /** Highlights, each a full page, ahead of the listings and not repeated in them. */
   highlights: GuideEvent[];
   /** In page order, page by page as the layout set them; a grid's picture box is an entry of its own (frame 'image') beside its listing. */
@@ -196,7 +203,21 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     // In the order they open again, counting on from the edition's first month.
     .sort((a, b) => ((a.reopens - edition[0]! + 12) % 12) - ((b.reopens - edition[0]! + 12) % 12) || a.name.localeCompare(b.name));
 
-  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet, lookingAhead };
+  // New this season: the places staff picked for this edition from those new to the jersey.com feed.
+  const editionName = editions(Number(window.from.slice(0, 4))).find((e) => e.window.from === window.from)?.name ?? null;
+  const picked = editionName ? await db.select().from(places).where(and(eq(places.newIn, editionName), ne(places.inclusion, 'excluded'), eq(places.review, 'approved'))).orderBy(asc(places.name)) : [];
+  const newThisSeason: NewPlace[] = picked.map((p) => ({
+    name: p.name,
+    section: p.guideSection ?? SECTION_LABEL[p.category] ?? '',
+    line: p.guideLine && usableLine(p.guideLine) ? p.guideLine : (p.guideCopy ?? p.summary ?? p.description ?? '').replace(/\s+/g, ' ').split(/(?<=[.!?])\s/)[0] ?? '',
+    thumb: printable(p.headerImage) ? webImage(p.headerImage!, 300, 300) : '',
+    imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
+    address: [p.addressLine1, printParish(p.parish)].filter(Boolean).join(', '),
+    phone: p.phone ?? '',
+    website: printWebsite(p.website)?.toLowerCase() ?? '',
+  }));
+
+  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet, lookingAhead, newThisSeason };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */

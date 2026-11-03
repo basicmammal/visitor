@@ -162,6 +162,8 @@ export const places = pgTable('places', {
   /** Our copy. Never touched by an import. */
   /** The owner's own words about the place, as they wrote them: what our website text, card sentence and print entry are written from. Theirs; only they and staff change it. */
   ownWords: text('own_words'),
+  /** The edition whose New this season page features it, chosen by staff from the places new to the jersey.com feed. */
+  newIn: text('new_in'),
   guideCopy: text('guide_copy'),
   /**
    * One sentence in the guide's voice, what a listing box on the grid of
