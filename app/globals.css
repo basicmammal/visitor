@@ -148,6 +148,8 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-venue-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5mm; margin-bottom: 0.4mm; }
 .gp-venue-name { font-weight: 700; font-size: 9pt; color: var(--gp-accent); }
 .gp-venue-three-quarters .gp-venue-name, .gp-venue-half .gp-venue-name { font-size: 12pt; }
+/* The bigger venue entries' copy, set with room between its lines as the guide prints it; the listing boxes stay tight. */
+.gp-venue-three-quarters .gp-event-copy, .gp-venue-half .gp-event-copy, .gp-venue-quarter .gp-event-copy { line-height: 1.2; }
 .gp-venue-quarter .gp-venue-name { font-size: 10.5pt; }
 .gp-venue-tag { flex: none; font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-accent); background: var(--gp-tint20); padding: 0.3mm 1mm; }
 .gp-venue-new { background: var(--gp-accent); color: white; }
