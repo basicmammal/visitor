@@ -122,7 +122,14 @@ export default async function Home() {
 
   // New this season: the places staff featured for the edition now in hand.
   const season = [...editions(Number(today.slice(0, 4)) - 1), ...editions(Number(today.slice(0, 4)))].find((e) => e.window.from <= today && e.window.to >= today)?.name;
-  const fresh = season ? await db.select().from(placesTable).where(and(eq(placesTable.newIn, season), ne(placesTable.inclusion, 'excluded'), eq(placesTable.review, 'approved'))) : [];
+  // Built ahead, before the deploy's migrations run: a column they have yet to add must not stop the build.
+  const fresh = season
+    ? await db
+        .select()
+        .from(placesTable)
+        .where(and(eq(placesTable.newIn, season), ne(placesTable.inclusion, 'excluded'), eq(placesTable.review, 'approved')))
+        .catch(() => [])
+    : [];
   const newStories: Story[] = fresh
     .filter((v) => printable(v.headerImage))
     .sort(() => Math.random() - 0.5)
