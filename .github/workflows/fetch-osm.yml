@@ -1,26 +1,35 @@
-# Fetches Jersey's OpenStreetMap data into data/osm and commits it to the branch that
-# triggered it. Runs on push when this file or the fetch script changes, or by hand.
+# Fetches the OpenStreetMap extract for the Channel Islands (Geofabrik's
+# guernsey-jersey) into data/osm and commits it to the branch that triggered
+# it: the sandbox cannot reach OSM servers. Runs on push when this file
+# changes, or by hand. scripts/osm/build.ts turns it into the guide's maps.
 name: Fetch OSM data
 on:
   push:
     branches-ignore: [claude/zen-faraday-0sj5n7]
-    paths: [.github/workflows/fetch-osm.yml, scripts/osm/queries.sh]
+    paths: [.github/workflows/fetch-osm.yml]
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: scripts/osm/queries.sh data/osm
+      - name: Download
+        run: |
+          mkdir -p data/osm
+          for i in 1 2 3; do
+            curl -sSfL -m 300 -o data/osm/guernsey-jersey.osm.pbf https://download.geofabrik.de/europe/guernsey-jersey-latest.osm.pbf && break
+            sleep 20
+          done
+          curl -sSfL -m 60 https://download.geofabrik.de/europe/guernsey-jersey-updates/state.txt -o data/osm/state.txt || true
+          ls -la data/osm
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
-          git add data/osm
-          git commit -m "Map data: OpenStreetMap extract for Jersey (© OpenStreetMap contributors)" || exit 0
+          git pull --rebase origin ${GITHUB_REF_NAME} || true
+          git add data/osm/guernsey-jersey.osm.pbf data/osm/state.txt
+          git commit -m "Map data: OpenStreetMap extract for the Channel Islands (© OpenStreetMap contributors, ODbL)" || exit 0
           git push origin HEAD:${GITHUB_REF_NAME}
