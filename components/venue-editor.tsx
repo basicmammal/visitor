@@ -16,6 +16,12 @@ import type { ProofKey } from '@/lib/proofs';
 
 const input = 'mt-2 w-full rounded-md border border-harbour/20 p-3 text-[15px] leading-relaxed focus:border-sea focus:outline-none focus:ring-2 focus:ring-sea/30';
 
+/** A card's line: the text if it is one short sentence, else its first sentence. */
+const cardLine = (t: string) => {
+  const s = t.replace(/\s+/g, ' ').trim();
+  return s.length <= 160 ? s : firstSentence(s);
+};
+
 const firstSentence = (t: string) => (t.replace(/\s+/g, ' ').trim().match(/^.*?[.!?](\s|$)/)?.[0] ?? t).trim();
 
 /**
@@ -87,14 +93,20 @@ export function VenueEditor(props: {
   }, [own, wordsChanged, room, props.proofKey, props.listingId]);
   const ours = wordsChanged
     ? { website: draft?.website ?? '', card: draft?.card ?? '', print: draft?.print ?? '' }
-    : { website: props.details.description ?? '', card: props.details.summary ?? '', print: props.venue.copy };
+    : {
+        // As it stands: everything the listing says as the website's text, and a sentence for the card (a long summary is the first paragraph, not a card line).
+        website: props.details.ownWords ?? props.details.description ?? '',
+        card: cardLine(props.details.summary ?? '') || cardLine(props.details.description ?? ''),
+        print: props.venue.copy,
+      };
   const description = ours.website;
 
   // The guide entry from what they have written: our words while theirs stand, their new words cut to whole sentences once they change.
   const venue = useMemo<GuideVenue>(() => {
     const address = [details.addressLine1, printAddress({ addressLine1: null, parish: details.parish, postcode: null })].filter(Boolean).join(', ');
     // Our guide words once drafted; their own cut at a sentence meanwhile.
-    const fresh = wordsChanged ? (ours.print ? [ours.print] : copyOptions({ guideCopy: null, summary: null, description: own })) : null;
+    // Every whole-sentence version of ours, fullest first, so a frame a little short of ours steps back a sentence rather than printing nothing.
+    const fresh = wordsChanged ? copyOptions({ guideCopy: ours.print || null, summary: null, description: ours.print ? null : own }) : null;
     const copy = fresh ? (props.venue.size === 'listing' ? firstSentence(fresh[0] ?? '') : (fresh[0] ?? '')) : props.venue.copy;
     return {
       ...props.venue,
@@ -262,7 +274,7 @@ export function VenueEditor(props: {
               </div>
             </div>
             <div className="mt-4 space-y-2 text-sm text-harbour/80">
-              {tidyCopy(description).split(/\n{2,}/).filter(Boolean).slice(0, 3).map((p, i) => <p key={i}>{p}</p>)}
+              {tidyCopy(description).split(/\n{2,}/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}
               {venue.opening && <p className="text-harbour/60">Open: {venue.opening}</p>}
             </div>
           </div>
