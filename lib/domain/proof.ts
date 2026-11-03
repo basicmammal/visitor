@@ -94,6 +94,7 @@ export function detailsChanges(current: DetailsForm, sent: Partial<Record<keyof 
     openMonths: cleanMonths(sent.openMonths),
     summary: text(sent.summary),
     description: longText(sent.description),
+    ownWords: longText(sent.ownWords),
   };
   const now: DetailsForm = {
     ...current,
@@ -101,6 +102,7 @@ export function detailsChanges(current: DetailsForm, sent: Partial<Record<keyof 
     openingHours: cleanHours(current.openingHours),
     openMonths: cleanMonths(current.openMonths),
     description: longText(current.description),
+    ownWords: longText(current.ownWords),
   };
   const out: ProofDetails = {};
   for (const k of Object.keys(tidy) as (keyof DetailsForm)[]) {
@@ -108,4 +110,18 @@ export function detailsChanges(current: DetailsForm, sent: Partial<Record<keyof 
     if (JSON.stringify(tidy[k]) !== JSON.stringify(now[k])) (out as Record<string, unknown>)[k] = tidy[k];
   }
   return Object.keys(out).length ? out : null;
+}
+
+/**
+ * What a venue has said about itself, whole: its own words once it has
+ * written them here; before that, what the listing says, its short part
+ * and its long part together, so nothing it already says is hidden.
+ */
+export function ownWordsOf(p: { ownWords: string | null; summary: string | null; description: string | null }): string {
+  if (p.ownWords) return p.ownWords;
+  const summary = tidyCopy(p.summary ?? '');
+  const description = tidyCopy(p.description ?? '');
+  if (!summary) return description;
+  if (!description || description.replace(/\s+/g, ' ').includes(summary.replace(/\s+/g, ' ').slice(0, 60))) return description || summary;
+  return `${summary}\n\n${description}`;
 }

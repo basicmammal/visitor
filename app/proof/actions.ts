@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { getUser } from '@/lib/auth/session';
 import { canEditListing } from '@/lib/auth/roles';
 import { rewriteListing } from '@/lib/integrations/claude/rewrite';
+import { listingWords, type ListingWords } from '@/lib/integrations/claude/listing-words';
 import { db } from '@/lib/db';
 import { ARTWORK_PLANS, listingChanges, places, proofs, type ArtworkFile, type ArtworkPlan, type Image, type Proof } from '@/lib/db/schema';
 import { allowedArtwork, artworkPath, artworkUploadUrl } from '@/lib/images/artwork';
@@ -33,7 +34,7 @@ export async function answerProof(form: FormData): Promise<ProofReply> {
   const note = String(form.get('note') ?? '').trim().slice(0, 2000) || null;
   const file = form.get('file');
   const picture = file instanceof File && file.size > 0 ? file : null;
-  const changes = replyChanges(entry.copy, sent, !!picture);
+  const changes: { copy: string | null; picture: boolean } = replyChanges(entry.copy, sent, !!picture);
 
   let image: Image | null = null;
   try {
@@ -49,6 +50,14 @@ export async function answerProof(form: FormData): Promise<ProofReply> {
       details = detailsChanges(detailsOf(entry.listing), JSON.parse(String(form.get('details') ?? '{}')));
     } catch {
       details = null;
+    }
+    // New words of their own: ours written from them, for the website, the card and the guide at the room their space has.
+    if (details?.ownWords) {
+      const words = await listingWords({ name: entry.listing.name, text: details.ownWords, printMax: roomOf(form) });
+      if (words) {
+        details = { ...details, description: words.website, summary: words.card };
+        changes.copy = words.print;
+      }
     }
   }
 
@@ -147,9 +156,13 @@ export async function saveVenueDetails(form: FormData): Promise<{ ok: true; stat
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
-  if (typeof changes.description === 'string') {
-    const r = await rewriteListing({ kind: 'venue', name: row.name, summary: null, description: changes.description });
-    if (r) Object.assign(changes, { description: r.description, summary: r.snippet });
+  if (typeof changes.ownWords === 'string') {
+    const words = await listingWords({ name: row.name, text: changes.ownWords, printMax: roomOf(form) });
+    if (words) Object.assign(changes, { description: words.website, summary: words.card, guideCopy: words.print });
+    else {
+      const r = await rewriteListing({ kind: 'venue', name: row.name, summary: null, description: changes.ownWords });
+      if (r) Object.assign(changes, { description: r.description, summary: r.snippet });
+    }
   }
   if (!Object.keys(changes).length) return { ok: false, error: 'Nothing has changed yet.' };
 
@@ -165,4 +178,30 @@ export async function saveVenueDetails(form: FormData): Promise<{ ok: true; stat
     await tx.insert(listingChanges).values({ kind: 'venue', listingId: id, businessId: row.businessId!, changes: { ...(open?.changes ?? {}), ...changes }, submittedBy: user.email });
   });
   return { ok: true, status: 'changes' };
+}
+
+/** The characters their space in the guide holds, as the form measured it: a sane number whatever arrives. */
+function roomOf(form: FormData): number {
+  const n = Number(form.get('room'));
+  return Number.isFinite(n) && n > 0 ? Math.min(2500, n) : 400;
+}
+
+/**
+ * Our words, drafted from theirs as they write: the website's text, the
+ * card's sentence and the guide's entry within the room their space has.
+ * For the person the proof link or the listing belongs to, no one else.
+ */
+export async function draftWords(input: { key?: ProofKey; listingId?: string; text: string; room: number }): Promise<ListingWords | null> {
+  const text = input.text.slice(0, 6000);
+  let name: string | null = null;
+  if (input.key && (input.key.token || input.key.proofId)) {
+    const proof = await proofFor(input.key);
+    if (proof && proof.kind === 'venue' && linkWorks(proof.deadline)) name = (await db.select({ name: places.name }).from(places).where(eq(places.id, proof.listingId)))[0]?.name ?? null;
+  } else if (input.listingId && /^[0-9a-f-]{36}$/.test(input.listingId)) {
+    const user = await getUser();
+    const [row] = await db.select({ name: places.name, businessId: places.businessId }).from(places).where(eq(places.id, input.listingId));
+    if (user && row && canEditListing(user, row)) name = row.name;
+  }
+  if (!name || !text.trim()) return null;
+  return listingWords({ name, text, printMax: Math.min(2500, Math.max(60, input.room || 400)) });
 }

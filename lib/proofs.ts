@@ -4,12 +4,11 @@ import { db } from '@/lib/db';
 import { events, places, proofs, type Event, type Image, type Place, type Proof, type ProofDetails } from '@/lib/db/schema';
 import { hashToken } from '@/lib/auth/accounts';
 import { getUser } from '@/lib/auth/session';
-import { rewriteListing } from '@/lib/integrations/claude/rewrite';
 import { canEditListing } from '@/lib/auth/roles';
 import { env } from '@/lib/env';
 import { guideEvent, guideVenue, type GuideEvent, type GuideVenue } from '@/lib/domain/guide-entry';
 import { editions } from '@/lib/guide';
-import { BOOKED, cleanHours, cleanMonths, deadlineText, linkWorks, type DetailsForm } from '@/lib/domain/proof';
+import { BOOKED, ownWordsOf, cleanHours, cleanMonths, deadlineText, linkWorks, type DetailsForm } from '@/lib/domain/proof';
 import { emailEnabled, sendEmail } from '@/lib/email/send';
 import { proofEmail } from '@/lib/email/templates';
 
@@ -92,7 +91,7 @@ export async function openProofsFor(kind: 'venue' | 'event', listingId: string):
 /** The entry as the edition prints it: a venue at the size booked, or an event's highlight page. */
 /** A venue's details as its proof form starts: the listing as it stands. */
 export function detailsOf(p: Place): DetailsForm {
-  return { phone: p.phone, email: p.email, website: p.website, addressLine1: p.addressLine1, parish: p.parish, postcode: p.postcode, openingHours: cleanHours(p.openingHours), openMonths: cleanMonths(p.openMonths), summary: p.summary, description: p.description };
+  return { phone: p.phone, email: p.email, website: p.website, addressLine1: p.addressLine1, parish: p.parish, postcode: p.postcode, openingHours: cleanHours(p.openingHours), openMonths: cleanMonths(p.openMonths), summary: p.summary, description: p.description, ownWords: ownWordsOf(p) };
 }
 
 export type ProofEntry =
@@ -217,17 +216,8 @@ export async function acceptProof(id: string, copy: string | null, usePicture: b
       set[k] = v;
       locked.add(k);
     }
-    // Their new words, in the guide's voice: the website's text and card sentence, and what the guide cuts its entry from.
-    if (typeof set.description === 'string') {
-      const [place] = await db.select({ name: places.name, locked: places.lockedFields }).from(places).where(eq(places.id, p.listingId));
-      const r = await rewriteListing({ kind: 'venue', name: place?.name ?? '', summary: null, description: set.description });
-      if (r) Object.assign(set, { description: r.description, summary: r.snippet });
-      set.guideCopy = set.description;
-      locked.add('summary');
-      locked.add('guideCopy');
-      // The listing box's one line is written again from the new words, unless a person wrote it.
-      if (!place?.locked.includes('guideLine')) set.guideLine = null;
-    }
+    // New words: ours were written from theirs when they sent them (website, card, guide). The listing box's one line is written again from them, unless a person wrote it.
+    if (typeof set.description === 'string' && !row.locked.includes('guideLine')) set.guideLine = null;
   }
   if (Object.keys(set).length) {
     await db.update(table).set({ ...set, lockedFields: [...locked], editedBy: by, editedAt: now, updatedAt: now }).where(eq(table.id, p.listingId));

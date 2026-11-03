@@ -52,7 +52,7 @@ async function Artwork({ p }: { p: Proof | null }) {
   );
 }
 
-const DETAIL: Record<string, string> = { phone: 'Phone', email: 'Email', website: 'Website', addressLine1: 'Address', parish: 'Parish', postcode: 'Postcode', openingHours: 'Hours', openMonths: 'Months open', summary: 'Summary (online)', description: 'Their words (online: on taking, AI puts them in our voice and the guide entry is cut from them)' };
+const DETAIL: Record<string, string> = { phone: 'Phone', email: 'Email', website: 'Website', addressLine1: 'Address', parish: 'Parish', postcode: 'Postcode', openingHours: 'Hours', openMonths: 'Months open', summary: 'Card sentence (ours)', description: 'Website text (ours)', ownWords: 'Their own words' };
 
 /** A detail as a person reads it: hours and months in words, the rest as written, nothing as a dash. */
 function shown(k: string, v: unknown): string {
@@ -82,7 +82,7 @@ async function Review({ r }: { r: Recipient }) {
               <p className="mt-1 whitespace-pre-line text-sm text-stone-600">{current}</p>
             </div>
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">Their words (edit before taking)</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">Guide entry, ours from their words (edit before taking)</span>
               <textarea name="copy" defaultValue={p.proposedCopy} rows={8} className="mt-1 w-full rounded border border-stone-300 p-2 text-sm" />
             </label>
           </div>

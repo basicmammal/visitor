@@ -1,8 +1,9 @@
 'use client';
 
 import { CheckCircle2, ImagePlus, RotateCcw } from 'lucide-react';
-import { useCallback, useMemo, useState, useTransition } from 'react';
-import { answerProof, saveVenueDetails } from '@/app/proof/actions';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { answerProof, draftWords, saveVenueDetails } from '@/app/proof/actions';
+import type { ListingWords } from '@/lib/integrations/claude/listing-words';
 import { GuidePreview } from '@/components/guide/proof-page';
 import { ProofArtwork, artworkFields, keyFields, type ArtworkAnswer } from '@/components/proof-artwork';
 import { ProofDetails } from '@/components/proof-details';
@@ -57,15 +58,44 @@ export function VenueEditor(props: {
   const [room, setRoom] = useState<number | null>(null);
   const onCapacity = useCallback((n: number) => setRoom((was) => (was === n ? was : n)), []);
 
-  const description = details.description ?? '';
-  const wordsChanged = tidyCopy(description) !== tidyCopy(props.details.description ?? '');
+  // Their words, whole, as they write them; ours drafted from them as they go (the website's, the card's, the guide's).
+  const own = details.ownWords ?? '';
+  const wordsChanged = tidyCopy(own) !== tidyCopy(props.details.ownWords ?? '');
   const changed = JSON.stringify(details) !== JSON.stringify(props.details) || !!file;
+  const [draft, setDraft] = useState<ListingWords | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [tried, setTried] = useState('');
+  const asked = useRef('');
+  useEffect(() => {
+    if (!wordsChanged || !tidyCopy(own)) {
+      setDraft(null);
+      return;
+    }
+    // A pause in their typing, then ours: not a request a keystroke.
+    const t = setTimeout(async () => {
+      const ask = `${own}\u0001${room}`;
+      asked.current = ask;
+      setDrafting(true);
+      const d = await draftWords({ key: props.proofKey, listingId: props.proofKey ? undefined : props.listingId, text: own, room: room ?? 400 });
+      if (asked.current === ask) {
+        setDraft(d);
+        setDrafting(false);
+        setTried(ask);
+      }
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [own, wordsChanged, room, props.proofKey, props.listingId]);
+  const ours = wordsChanged
+    ? { website: draft?.website ?? '', card: draft?.card ?? '', print: draft?.print ?? '' }
+    : { website: props.details.description ?? '', card: props.details.summary ?? '', print: props.venue.copy };
+  const description = ours.website;
 
   // The guide entry from what they have written: our words while theirs stand, their new words cut to whole sentences once they change.
   const venue = useMemo<GuideVenue>(() => {
     const address = [details.addressLine1, printAddress({ addressLine1: null, parish: details.parish, postcode: null })].filter(Boolean).join(', ');
-    const fresh = wordsChanged ? copyOptions({ guideCopy: null, summary: null, description }) : null;
-    const copy = fresh ? (props.venue.size === 'listing' ? firstSentence(description) : description) : props.venue.copy;
+    // Our guide words once drafted; their own cut at a sentence meanwhile.
+    const fresh = wordsChanged ? (ours.print ? [ours.print] : copyOptions({ guideCopy: null, summary: null, description: own })) : null;
+    const copy = fresh ? (props.venue.size === 'listing' ? firstSentence(fresh[0] ?? '') : (fresh[0] ?? '')) : props.venue.copy;
     return {
       ...props.venue,
       phone: details.phone ?? '',
@@ -74,10 +104,10 @@ export function VenueEditor(props: {
       address,
       opening: openingText(cleanHours(details.openingHours), cleanMonths(details.openMonths)) ?? '',
       copy,
-      options: fresh ? (props.venue.size === 'listing' ? [firstSentence(description)] : fresh) : props.venue.options,
+      options: fresh ? (props.venue.size === 'listing' ? [firstSentence(fresh[0] ?? '')] : fresh) : props.venue.options,
     };
-  }, [props.venue, details, description, wordsChanged]);
-  const summary = wordsChanged ? firstSentence(description) : (details.summary ?? '');
+  }, [props.venue, details, own, ours.print, wordsChanged]);
+  const summary = ours.card || (wordsChanged ? firstSentence(own) : '');
 
   const choose = async (f: File | undefined) => {
     if (!f) return;
@@ -96,6 +126,7 @@ export function VenueEditor(props: {
       const form = new FormData();
       form.set('listingId', props.listingId);
       form.set('details', JSON.stringify(details));
+      form.set('room', String(room ?? 400));
       if (file) form.set('file', file);
       if (props.proofKey) {
         keyFields(form, props.proofKey);
@@ -147,12 +178,44 @@ export function VenueEditor(props: {
 
         <ProofDetails value={details} onChange={setDetails} />
 
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <label htmlFor="description" className="block font-semibold text-ink">About {props.name}</label>
-          <p className="mt-0.5 text-sm text-harbour/65">Your words for the website. The guide prints a shorter version: our editors cut it from this to fit your space.</p>
-          <textarea id="description" value={description} onChange={(e) => setDetails({ ...details, description: e.target.value })} rows={9} className={input} />
-          <Count used={tidyCopy(description).length} room={room} space={props.booked ? `your ${props.booked.replace(/^(a |your )/, '')}` : 'your listing box'} />
+          <label htmlFor="own" className="block font-semibold text-ink">What you’d like to say</label>
+          <p className="mt-0.5 text-sm text-harbour/65">About {props.name}, in your own words, as much as you like. We write the website’s text and the guide’s entry from this.</p>
+          <textarea id="own" value={own} onChange={(e) => setDetails({ ...details, ownWords: e.target.value })} rows={14} className={input} />
+          <p className="mt-1 text-right text-xs text-harbour/55">{tidyCopy(own).length} characters</p>
         </div>
+        <div className="rounded-lg bg-white p-4 ring-1 ring-harbour/10">
+          <p className="flex items-center justify-between font-semibold text-ink">
+            How we’ll put it
+            {drafting && <span className="text-xs font-normal text-harbour/55">Writing…</span>}
+          </p>
+          <p className="mt-0.5 text-sm text-harbour/65">In the guide’s voice, from your words: our editors check it before it goes live.</p>
+          {wordsChanged && !draft && !drafting ? (
+            <p className="mt-4 text-sm text-harbour/60">{tried ? 'We could not write our version just now: we will when you send this, and our editors will check it.' : 'Pause typing and our version appears here.'}</p>
+          ) : (
+            <dl className="mt-4 space-y-4 text-sm">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-harbour/55">On listing cards</dt>
+                <dd className="mt-1 text-harbour/85">{ours.card || '–'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-harbour/55">On the website</dt>
+                <dd className="mt-1 space-y-2 text-harbour/85">{tidyCopy(ours.website).split(/\n{2,}/).filter(Boolean).map((t, i) => <p key={i}>{t}</p>)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-harbour/55">In the guide</dt>
+                <dd className="mt-1 text-harbour/85">{venue.copy || '–'}</dd>
+                <Count used={tidyCopy(venue.copy).length} room={room} space={props.booked ? `your ${props.booked.replace(/^(a |your )/, '')}` : 'your listing box'} />
+              </div>
+            </dl>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-2xl space-y-8">
 
         {artwork && props.proofKey && (
           <div className="border-t border-harbour/10 pt-6">
@@ -205,7 +268,7 @@ export function VenueEditor(props: {
           </div>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-harbour/60">In the guide{props.booked ? `: ${props.booked}` : ': your listing'}</p>
-            <GuidePreview venue={venue} picture={picture} sample={description} onCapacity={onCapacity} />
+            <GuidePreview venue={venue} picture={picture} sample={own} onCapacity={onCapacity} />
             {!props.booked && <p className="mt-2 max-w-sm text-xs text-harbour/60">Every venue in the guide has a listing like this. Ask us about a bigger entry with a picture.</p>}
           </div>
         </div>

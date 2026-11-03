@@ -211,6 +211,13 @@
       "when": 1793656529080,
       "tag": "0029_proof_details",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793663848365,
+      "tag": "0030_place_own_words",
+      "breakpoints": true
     }
   ]
 }

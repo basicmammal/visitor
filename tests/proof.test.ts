@@ -37,9 +37,18 @@ describe('proof artwork', () => {
 describe('proof details', () => {
   it('keeps only what a client changed, tidied', async () => {
     const { detailsChanges } = await import('@/lib/domain/proof');
-    const now = { phone: '01534 123456', email: 'Shop@x.je', website: 'x.je', addressLine1: '1 King St', parish: 'St Helier', postcode: 'JE2 4WE', openingHours: { mon: ['09:00', '17:00'] as [string, string] }, openMonths: [], summary: 'Jewellers.', description: 'Fine jewellery.' };
+    const now = { phone: '01534 123456', email: 'Shop@x.je', website: 'x.je', addressLine1: '1 King St', parish: 'St Helier', postcode: 'JE2 4WE', openingHours: { mon: ['09:00', '17:00'] as [string, string] }, openMonths: [], summary: 'Jewellers.', description: 'Fine jewellery.', ownWords: null };
     expect(detailsChanges(now, { phone: ' 01534 123456 ', email: 'shop@x.je', openMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], openingHours: { mon: ['09:00', '17:00'] } })).toBeNull();
     expect(detailsChanges(now, { openingHours: { mon: ['09:30', '17:30'], sun: ['', ''] }, postcode: 'je2 4we', website: 'rivoli.je' })).toEqual({ openingHours: { mon: ['09:30', '17:30'] }, website: 'rivoli.je' });
     expect(detailsChanges(now, { openMonths: [4, 5, 6, 7, 8, 9, 10], summary: '' })).toEqual({ openMonths: [4, 5, 6, 7, 8, 9, 10], summary: null });
+  });
+});
+
+describe('own words', () => {
+  it('starts from everything the listing says, short part and long', async () => {
+    const { ownWordsOf } = await import('@/lib/domain/proof');
+    expect(ownWordsOf({ ownWords: null, summary: 'A family jeweller.', description: 'Watches and rings.' })).toBe('A family jeweller.\n\nWatches and rings.');
+    expect(ownWordsOf({ ownWords: null, summary: 'A family jeweller.', description: 'A family jeweller. Watches too.' })).toBe('A family jeweller. Watches too.');
+    expect(ownWordsOf({ ownWords: 'Ours.', summary: 'x', description: 'y' })).toBe('Ours.');
   });
 });

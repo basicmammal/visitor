@@ -160,6 +160,8 @@ export const places = pgTable('places', {
   summary: text('summary'),
   description: text('description'),
   /** Our copy. Never touched by an import. */
+  /** The owner's own words about the place, as they wrote them: what our website text, card sentence and print entry are written from. Theirs; only they and staff change it. */
+  ownWords: text('own_words'),
   guideCopy: text('guide_copy'),
   /**
    * One sentence in the guide's voice, what a listing box on the grid of
@@ -665,4 +667,5 @@ export type ProofDetails = Partial<{
   openMonths: number[];
   summary: string | null;
   description: string | null;
+  ownWords: string | null;
 }>;

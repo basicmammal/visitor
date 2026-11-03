@@ -14,7 +14,7 @@ const ADMIN_PATH: Record<ListingKind, string> = { venue: '/admin/venues', event:
 
 const LABEL: Record<string, string> = {
   name: 'Name', title: 'Title', category: 'Type', addressLine1: 'Address', addressLine2: 'Address 2', parish: 'Parish', postcode: 'Postcode',
-  openingHours: 'Opening hours', openMonths: 'Months open', headerImage: 'Picture', phone: 'Phone', email: 'Email', website: 'Website', summary: 'Summary', description: 'Description', placeId: 'Venue (theirs)',
+  ownWords: 'Their own words', guideCopy: 'Guide entry', openingHours: 'Opening hours', openMonths: 'Months open', headerImage: 'Picture', phone: 'Phone', email: 'Email', website: 'Website', summary: 'Summary', description: 'Description', placeId: 'Venue (theirs)',
   venueName: 'Venue', dates: 'Dates', fromPricePence: 'Price from', toPricePence: 'Price to', free: 'Free', duration: 'Duration', meetingPoint: 'Meeting point',
 };
 
