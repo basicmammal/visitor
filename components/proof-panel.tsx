@@ -4,7 +4,7 @@ import { webImage } from '@/lib/domain/images';
 import { ProofEditor } from '@/components/proof-editor';
 import { VenueEditor } from '@/components/venue-editor';
 
-const SPACE: Record<string, string> = { full: 'a full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page' };
+const SPACE: Record<string, string> = { listing: 'a listing box (⅛ page)', full: 'a full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page' };
 import { detailsOf, upcomingEditions, type ProofEntry, type ProofKey } from '@/lib/proofs';
 
 /**

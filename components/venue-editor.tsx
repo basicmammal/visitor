@@ -64,6 +64,8 @@ export function VenueEditor(props: {
   const [done, setDone] = useState(props.answered ?? null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // The size they have: a booked listing box is an eighth of a page; with nothing booked, the sixteenth every venue gets.
+  const booked: PreviewSize = props.venue.size === 'listing' || props.venue.size === 'directory' ? (props.booked ? 'eighth' : 'sixteenth') : (props.venue.size as PreviewSize);
   const [room, setRoom] = useState<number | null>(null);
   const onCapacity = useCallback((n: number) => setRoom((was) => (was === n ? was : n)), []);
 
@@ -283,7 +285,7 @@ export function VenueEditor(props: {
           </div>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-harbour/60">In the guide{props.booked ? `: ${props.booked}` : ': your listing'}</p>
-            <GuidePreview venue={venue} picture={picture} sample={own} onCapacity={onCapacity} />
+            <GuidePreview venue={venue} picture={picture} sample={own} onCapacity={onCapacity} as={booked === 'eighth' ? 'eighth' : undefined} />
             {!props.booked && <p className="mt-2 max-w-sm text-xs text-harbour/60">Every venue in the guide has a listing like this. Ask us about a bigger entry with a picture.</p>}
           </div>
         </div>
@@ -293,7 +295,7 @@ export function VenueEditor(props: {
         venue={venue}
         picture={picture}
         words={ours.website || own}
-        current={props.venue.size === 'listing' || props.venue.size === 'directory' ? 'sixteenth' : (props.venue.size as PreviewSize)}
+        current={booked}
         editions={props.editions}
         listingId={props.listingId}
         proofKey={props.proofKey}

@@ -65,7 +65,7 @@ function shown(k: string, v: unknown): string {
   return typeof v === 'string' && v ? v : '–';
 }
 
-const SIZE: Record<string, string> = { full: 'Full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page', highlight: 'Highlight page' };
+const SIZE: Record<string, string> = { listing: 'Listing box (⅛ page)', full: 'Full page', 'three-quarters': '¾ page', half: '½ page', quarter: '¼ page', highlight: 'Highlight page' };
 
 /** A client's changes beside what the entry says now: take them (the words as left in the box), or turn them down. */
 async function Review({ r }: { r: Recipient }) {

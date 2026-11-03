@@ -8,7 +8,7 @@ import { canEditListing } from '@/lib/auth/roles';
 import { env } from '@/lib/env';
 import { guideEvent, guideVenue, type GuideEvent, type GuideVenue } from '@/lib/domain/guide-entry';
 import { editions } from '@/lib/guide';
-import { BOOKED, ownWordsOf, cleanHours, cleanMonths, deadlineText, linkWorks, type DetailsForm } from '@/lib/domain/proof';
+import { BOOKED, PROOF_SIZES, ownWordsOf, cleanHours, cleanMonths, deadlineText, linkWorks, type DetailsForm } from '@/lib/domain/proof';
 import { emailEnabled, sendEmail } from '@/lib/email/send';
 import { proofEmail } from '@/lib/email/templates';
 
@@ -51,9 +51,9 @@ export async function proofRecipients(edition: string): Promise<Recipient[]> {
   const proofOf = (kind: string, id: string) => made.find((p) => p.kind === kind && p.listingId === id) ?? null;
   return [
     ...venueRows
-      .filter((p) => (BOOKED as readonly string[]).includes(p.spaceByEdition[edition] ?? ''))
+      .filter((p) => (PROOF_SIZES as readonly string[]).includes(p.spaceByEdition[edition] ?? ''))
       .map((p): Recipient => ({ kind: 'venue', listingId: p.id, name: p.name, email: p.email, size: p.spaceByEdition[edition] ?? p.listingSize, proof: proofOf('venue', p.id) }))
-      .sort((a, b) => BOOKED.indexOf(a.size as never) - BOOKED.indexOf(b.size as never) || a.name.localeCompare(b.name)),
+      .sort((a, b) => PROOF_SIZES.indexOf(a.size as never) - PROOF_SIZES.indexOf(b.size as never) || a.name.localeCompare(b.name)),
     ...eventRows.map((e): Recipient => ({ kind: 'event', listingId: e.id, name: e.title, email: e.email, size: 'highlight', proof: proofOf('event', e.id) })).sort((a, b) => a.name.localeCompare(b.name)),
   ];
 }

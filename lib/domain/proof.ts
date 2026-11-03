@@ -9,6 +9,9 @@ import { WEEK, type WeekHours } from './opening';
 /** The space that gets a proof: more than a listing box or a directory line. Biggest first. */
 export const BOOKED = ['full', 'three-quarters', 'half', 'quarter'] as const;
 
+/** Everyone with space booked in an edition gets a proof: the bigger spaces, and a listing box (an eighth of a page on the venue grid). */
+export const PROOF_SIZES = [...BOOKED, 'listing'] as const;
+
 /** A link works until a week after the artwork deadline, so a late reply still reaches us. */
 export const GRACE_DAYS = 7;
 
