@@ -14,7 +14,7 @@ and site type), `tailwind.config.ts` (site type), `components/guide/maps.tsx` (m
 | Headlines, section and index headings | GT Flaire Extra Regular | GT Flaire Extra Regular | GT Flaire Extra Regular |
 | Taglines (opener pages) | GT Flaire Extra, uppercase | the same | the same |
 | Body copy | Google Sans Flex Light | Google Sans Flex Light, 87.5% width | Google Sans Flex Light |
-| Picking things out (names, dates, labels) | Google Sans Flex Medium | Medium; never bold | Medium |
+| Picking things out (names, dates, labels) | Google Sans Flex Medium | Medium; event and tour dates bold | Medium |
 
 - **GT Flaire never sets body copy**, and only comes in Regular: never bold, never faked bold.
 - Headline line height 110%, letter spacing 0. Body line height 140% on the site and in longer copy
@@ -48,8 +48,11 @@ light blue; green with dark green.
 
 ### Rules for colour
 
-1. **Text is deep blue, or white on a dark colour.** No text in orange, green, blue or the rest,
-   however small. Section colour goes on the tab, the rules, the chips and the markers, not on names.
+1. **Text is deep blue, or white on a dark colour**, with one exception the guide makes on purpose:
+   in What's On and tours, an event's or tour's **title is in the section's colour** and its **date in
+   bold at 50% of the section's colour**, with the times on their own line under the title. Everything
+   else (venue names, copy, prices, contacts) stays deep blue; section colour otherwise goes on the
+   tab, the rules, the chips and the markers.
 2. On a coloured tab or chip, the type is white on blue, dark green, maroon and deep blue, and deep
    blue on light blue, green, orange and sand (`onColour` in the code works this out).
 3. Light blue and sand are backgrounds only: as rules or type on white paper they disappear.
@@ -90,7 +93,8 @@ the category's colour. Credit: "Map data © OpenStreetMap contributors".
 
 - Type: Proxima Nova and Proxima Nova Condensed become Google Sans Flex and GT Flaire Extra.
 - Bold becomes Medium throughout.
-- Names, titles and prices are no longer printed in the section colour, but in deep blue.
+- Venue names and prices are no longer printed in the section colour, but in deep blue; event and
+  tour titles stay in it, with their dates in bold at 50%, and times move under the title.
 - Section colours: Visit teal becomes blue; Eat field green becomes Jersey green; Do midnight blue
   becomes deep blue; Buy plum becomes maroon; events orange becomes Jersey orange; tours green
   becomes dark green.

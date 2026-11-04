@@ -109,7 +109,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
  * are on the venue's own entry, and its area on the page edge.
  */
 .gp-grid16 .gp-event { font-size: 7pt; line-height: 1.04; }
-.gp-grid16 .gp-event-when, .gp-grid16 .gp-event-when em { font-size: 6.5pt; }
+.gp-grid16 .gp-event-when, .gp-grid16 .gp-event-times { font-size: 6.5pt; }
 .gp-grid16 .gp-event-title { font-size: 7.5pt; margin: 0; }
 .gp-grid16 .gp-event-venue { margin-top: 0.4mm; font-size: 6.5pt; }
 .gp-grid16 .gp-event-web { margin-top: 0.3mm; font-size: 6pt; }
@@ -121,7 +121,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-grid16 .gp-tour-meta { margin-top: 0.3mm; font-size: 6.5pt; }
 .gp-image { margin: 0; }
 .gp-tour-grid .gp-listing { border-top-color: var(--gp-ink); }
-.gp-tour-grid .gp-event-title { color: var(--gp-ink); }
+.gp-tour-grid .gp-event-title { color: var(--gp-accent); }
 /* Key icons: two at most on a listing, top right; the page's key runs down the 3.9mm edge column under the tabs, 4mm clear of the grid. */
 .gp-icons { float: right; display: inline-flex; gap: 0.8mm; margin: 0.2mm 0 0 1mm; color: var(--gp-ink80); }
 .gp-icons svg { width: 3mm; height: 3mm; }
@@ -140,9 +140,12 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-listing { border-top: 0.6pt solid var(--gp-events); padding-top: 1.6mm; }
 .gp-event { overflow: hidden; font-size: 8.5pt; line-height: 1.08; }
 .gp-event-image { display: block; width: 45.5mm; height: 15.9mm; object-fit: cover; border-bottom: 0.6pt solid var(--gp-events); margin-bottom: 2.6mm; }
-.gp-event-when { font-weight: 500; font-size: 9pt; text-transform: uppercase; }
+/* The date in bold at half the section's colour, the title in the section's colour, the times under the title. */
+.gp-event-when { font-weight: 700; font-size: 9pt; text-transform: uppercase; color: var(--gp-tint50); }
+.gp-event-when .gp-icons { color: var(--gp-ink80); }
+.gp-event-times { font-weight: 500; font-style: italic; font-size: 7.5pt; color: var(--gp-ink80); margin: 0 0 0.3mm; }
 .gp-event-when em { font-weight: 500; font-style: italic; color: var(--gp-ink80); margin-left: 2mm; text-transform: none; }
-.gp-event-title { font-weight: 500; font-size: 9pt; color: var(--gp-ink); margin: 0.2mm 0 0.3mm; }
+.gp-event-title { font-weight: 500; font-size: 9pt; color: var(--gp-accent); margin: 0.2mm 0 0.3mm; }
 .gp-event-copy { font-weight: 300; }
 .gp-price { color: var(--gp-ink); }
 .gp-event-venue { margin-top: 2.2mm; font-weight: 500; font-size: 7.5pt; color: var(--gp-ink); display: flex; align-items: center; gap: 0.8mm; }
@@ -210,7 +213,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-caption { position: absolute; left: 8.1mm; bottom: 10mm; max-width: 80mm; background: var(--gp-ink); color: white; font-family: var(--gp-sans); font-weight: 500; font-size: 5.5pt; padding: 0.8mm 1.5mm; }
 
 .gp-highlight-image { width: 100%; height: 62mm; object-fit: cover; margin-bottom: 3mm; }
-.gp-highlight-title { font-family: var(--gp-head); font-weight: 400; font-size: 15pt; line-height: 1.05; color: var(--gp-ink); margin: 0.5mm 0 2mm; }
+.gp-highlight-title { font-family: var(--gp-head); font-weight: 400; font-size: 15pt; line-height: 1.05; color: var(--gp-accent); margin: 0.5mm 0 2mm; }
 .gp-highlight-copy { font-size: 8.5pt; line-height: 1.15; column-count: 2; column-gap: 3.9mm; }
 .gp-highlight-copy p + p { margin-top: 1.5mm; }
 
@@ -231,8 +234,8 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-tour-heading h3 b { font-weight: 500; }
 .gp-tour { border-top: 0.5pt solid var(--gp-tours-light); padding: 0.7mm 0 2.6mm; }
 .gp-tour-head { font-size: 8pt; line-height: 1.3; }
-.gp-tour-head b { font-weight: 500; color: var(--gp-ink); }
-.gp-tour-title { font-weight: 500; color: var(--gp-ink); margin-left: 0.6mm; }
+.gp-tour-head b { font-weight: 700; color: var(--gp-tint50); }
+.gp-tour-title { font-weight: 500; color: var(--gp-accent); margin-left: 0.6mm; }
 .gp-code, .gp-duration { display: inline-flex; align-items: center; gap: 0.4mm; margin-left: 1mm; }
 .gp-code { color: var(--gp-ink); font-size: 7.5pt; }
 .gp-duration { font-weight: 500; font-style: italic; font-size: 7pt; color: var(--gp-ink80); }
