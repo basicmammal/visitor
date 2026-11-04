@@ -73,12 +73,13 @@ light blue; green with dark green.
 
 ## Maps
 
-Drawn from OpenStreetMap in the palette: sand land, light blue sea (45% tint), green spaces in
-green tints, the National Park in green with a dark green dashed edge, main roads orange cased in
-maroon, place names in deep blue. Index markers by category: Attractions orange, Heritage & culture
-maroon, Shopping blue, Restaurants dark green, Activity deep blue, Pubs green (St Helier: Bars
-orange, Coffee & cakes green, Activity & travel deep blue). Index headings in GT Flaire with a rule in
-the category's colour. Credit: "Map data © OpenStreetMap contributors".
+Drawn from OpenStreetMap on a quiet, neutral base so the markers are what you see: off-white land,
+a pale grey-blue sea, roads in white cased in grey and graded by width (the island leaves out its
+lanes), green spaces and the National Park only faintly tinted, place and street names in soft grey.
+**Colour belongs to the markers**: by category, Attractions orange, Heritage & culture maroon,
+Shopping blue, Restaurants dark green, Activity deep blue, Pubs green (St Helier: Bars orange,
+Coffee & cakes green, Activity & travel deep blue), with white numbers. Index headings in GT Flaire
+with a rule in the category's colour. Credit: "Map data © OpenStreetMap contributors".
 
 ## Layout and imagery
 
