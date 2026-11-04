@@ -5,7 +5,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode 
 import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
-import { PAGE_SWATCHES, onColour, sectionSwatch, tint } from '@/lib/domain/guide-colours';
+import { PAGE_SWATCHES, markerText, sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
 
@@ -46,7 +46,7 @@ function Folio({ n, side }: { n: number; side: 'left' | 'right' }) {
 export function Frame({ page, n }: { page: Page; n: number }) {
   const side = n % 2 === 0 ? 'left' : 'right';
   return (
-    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-on-accent': onColour(page.section.colour), '--gp-tint20': tint(page.section.colour, 20), '--gp-tint50': tint(page.section.colour, 50), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
+    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-on-accent': markerText(page.section.colour), '--gp-tint20': tint(page.section.colour, 20), '--gp-tint50': tint(page.section.colour, 50), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
       {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
       {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}

@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import island from '@/lib/maps/island.json';
 import town from '@/lib/maps/st-helier.json';
-import { PALETTE, onColour, tint } from '@/lib/domain/guide-colours';
+import { PALETTE, markerText, tint } from '@/lib/domain/guide-colours';
 import { ISLAND_FRAME, TOWN_FRAME, TOWN_GRID, project } from '@/lib/domain/map-frame';
 import type { MapItem } from '@/lib/maps';
 
@@ -115,7 +115,7 @@ function Marker({ x, y, n, colour, r = 1.55 }: { x: number; y: number; n: number
   return (
     <g>
       <circle cx={x} cy={y} r={r} fill={colour} stroke="#fff" strokeWidth={0.3} />
-      <text x={x} y={y + r * 0.36} textAnchor="middle" fontSize={r * 1.05} fontWeight={500} fill={onColour(colour)}>{n}</text>
+      <text x={x} y={y + r * 0.36} textAnchor="middle" fontSize={r * 1.05} fontWeight={500} fill={markerText(colour)}>{n}</text>
     </g>
   );
 }
@@ -195,7 +195,7 @@ function IndexColumn({ category, items }: { category: string; items: MapItem[] }
       <ol>
         {items.map((i) => (
           <li key={i.id}>
-            <span className="gm-num" style={{ background: colour, color: onColour(colour) }}>{i.n}</span>
+            <span className="gm-num" style={{ background: colour, color: markerText(colour) }}>{i.n}</span>
             <span className={i.missing ? 'gm-missing' : undefined}>{i.label}</span>
             {i.ref && <span className="gm-ref">{i.ref}</span>}
           </li>

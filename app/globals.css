@@ -131,7 +131,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-key span { display: inline-flex; align-items: center; gap: 0.8mm; white-space: nowrap; }
 .gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
 .gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-tours-light); }
-.gp-tab.gp-marker span { color: var(--gp-ink); }
+.gp-tab.gp-marker span { color: var(--gp-on-accent, white); }
 .gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 500; font-size: 7pt; color: var(--gp-ink); }
 .gp-page.gp-left .gp-tour-footer { left: 8.1mm; } .gp-page.gp-right .gp-tour-footer { right: 8.1mm; }
 .gp-tour-footer svg { width: 2.8mm; height: 2.8mm; }

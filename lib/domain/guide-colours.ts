@@ -46,6 +46,16 @@ export const PAGE_SWATCHES = {
 export type SectionName = keyof typeof SECTION_SWATCHES;
 
 /** Type on a colour: white on the dark ones, deep blue on the light, as the guidelines pair them. */
+/**
+ * Type on the guide's page markers, chips and numbered markers: white, as
+ * the guide sets them, on every colour but the two backgrounds (light blue
+ * and sand), where white would vanish and deep blue takes its place.
+ */
+export function markerText(hex: string): string {
+  const h = hex.toLowerCase();
+  return h === PALETTE.lightBlue.hex || h === PALETTE.sand.hex ? PALETTE.deepBlue.hex : '#ffffff';
+}
+
 export function onColour(hex: string): string {
   const n = parseInt(hex.slice(1), 16);
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {

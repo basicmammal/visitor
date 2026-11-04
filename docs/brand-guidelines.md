@@ -53,8 +53,8 @@ light blue; green with dark green.
    bold at 50% of the section's colour**, with the times on their own line under the title. Everything
    else (venue names, copy, prices, contacts) stays deep blue; section colour otherwise goes on the
    tab, the rules, the chips and the markers.
-2. On a coloured tab or chip, the type is white on blue, dark green, maroon and deep blue, and deep
-   blue on light blue, green, orange and sand (`onColour` in the code works this out).
+2. Type on the page markers (the edge tabs), chips, folios and numbered map markers is **white**, on
+   every colour but light blue and sand, where it is deep blue (`markerText` in the code).
 3. Light blue and sand are backgrounds only: as rules or type on white paper they disappear.
 4. Tints (for chips and second tabs) are the section colour at 20% and 60%, as before.
 
@@ -62,11 +62,11 @@ light blue; green with dark green.
 
 | Section | Colour | Tab type |
 |---|---|---|
-| What's On (events) | Orange | Deep blue |
+| What's On (events) | Orange | White |
 | Walks and tours | Dark green (rules), green (markers) | White |
-| New this season | Orange | Deep blue |
+| New this season | Orange | White |
 | Visit | Blue | White |
-| Eat | Green | Deep blue |
+| Eat | Green | White |
 | Do | Deep blue | White |
 | Buy | Maroon | White |
 | Maps | Light blue | Deep blue |

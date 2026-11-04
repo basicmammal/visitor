@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PALETTE, SECTION_SWATCHES, onColour, sectionSwatch, tint, UNASSIGNED } from '@/lib/domain/guide-colours';
+import { PALETTE, SECTION_SWATCHES, markerText, onColour, sectionSwatch, tint, UNASSIGNED } from '@/lib/domain/guide-colours';
 
 describe('sectionSwatch', () => {
   it('gives each section one colour from the Jersey palette', () => {
@@ -33,5 +33,13 @@ describe('onColour', () => {
   it('sets type in white on the dark colours and deep blue on the light, as the guidelines pair them', () => {
     for (const c of [PALETTE.blue, PALETTE.darkGreen, PALETTE.maroon, PALETTE.deepBlue]) expect(onColour(c.hex)).toBe('#ffffff');
     for (const c of [PALETTE.lightBlue, PALETTE.green, PALETTE.sand]) expect(onColour(c.hex)).toBe(PALETTE.deepBlue.hex);
+  });
+});
+
+describe('markerText', () => {
+  it('is white on the page markers, chips and numbers, but on light blue and sand', () => {
+    for (const c of [PALETTE.orange, PALETTE.green, PALETTE.blue, PALETTE.darkGreen, PALETTE.maroon, PALETTE.deepBlue]) expect(markerText(c.hex)).toBe('#ffffff');
+    expect(markerText(PALETTE.lightBlue.hex)).toBe(PALETTE.deepBlue.hex);
+    expect(markerText(PALETTE.sand.hex)).toBe(PALETTE.deepBlue.hex);
   });
 });
