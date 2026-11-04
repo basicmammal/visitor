@@ -17,7 +17,7 @@ const day = (d: Date | null) => (d ? d.toLocaleDateString('en-GB', { day: 'numer
  * in the six months before it, newest first, to pick from. Being new to
  * the feed is not always being new (a beach or a town gets its first
  * listing too), so staff choose. The picks get a page in the guide and a
- * spread on the front page.
+ * spread on the front page. Places to stay are not part of it.
  */
 export default async function NewThisSeason({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
@@ -29,7 +29,7 @@ export default async function NewThisSeason({ searchParams }: { searchParams: Se
   const rows = await db
     .select()
     .from(places)
-    .where(and(eq(places.review, 'approved'), ne(places.inclusion, 'excluded'), or(gte(places.firstListedAt, since), eq(places.newIn, ed.name))))
+    .where(and(eq(places.review, 'approved'), ne(places.inclusion, 'excluded'), ne(places.category, 'stay'), or(gte(places.firstListedAt, since), eq(places.newIn, ed.name))))
     .orderBy(desc(places.firstListedAt));
   const picked = rows.filter((p) => p.newIn === ed.name);
   const rest = rows.filter((p) => p.newIn !== ed.name);

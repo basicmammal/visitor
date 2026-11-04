@@ -205,7 +205,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
 
   // New this season: the places staff picked for this edition from those new to the jersey.com feed.
   const editionName = editions(Number(window.from.slice(0, 4))).find((e) => e.window.from === window.from)?.name ?? null;
-  const picked = editionName ? await db.select().from(places).where(and(eq(places.newIn, editionName), ne(places.inclusion, 'excluded'), eq(places.review, 'approved'))).orderBy(asc(places.name)) : [];
+  const picked = editionName ? await db.select().from(places).where(and(eq(places.newIn, editionName), ne(places.inclusion, 'excluded'), ne(places.category, 'stay'), eq(places.review, 'approved'))).orderBy(asc(places.name)) : [];
   const newThisSeason: NewPlace[] = picked.map((p) => ({
     name: p.name,
     section: p.guideSection ?? SECTION_LABEL[p.category] ?? '',

@@ -127,7 +127,7 @@ export default async function Home() {
     ? await db
         .select()
         .from(placesTable)
-        .where(and(eq(placesTable.newIn, season), ne(placesTable.inclusion, 'excluded'), eq(placesTable.review, 'approved')))
+        .where(and(eq(placesTable.newIn, season), ne(placesTable.inclusion, 'excluded'), ne(placesTable.category, 'stay'), eq(placesTable.review, 'approved')))
         .catch(() => [])
     : [];
   const newStories: Story[] = fresh
