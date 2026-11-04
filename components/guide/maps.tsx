@@ -146,7 +146,7 @@ export function IslandMap({ items }: { items: MapItem[] }) {
           <Fragment key={i.id}>
             <Marker x={x} y={y} n={i.n} colour={colourOf(i.category)} />
             {i.labelled && (
-              <text x={x + 2} y={y + 0.7} fontSize={2.1} fontWeight={500} fill={INK} stroke="#fff" strokeWidth={0.6} paintOrder="stroke">{i.n}. {i.label}</text>
+              <text x={x + 2} y={y + 0.7} fontSize={2.1} fontWeight={500} fill={INK} stroke="#fff" strokeWidth={0.6} paintOrder="stroke">{i.label}</text>
             )}
           </Fragment>
         );
