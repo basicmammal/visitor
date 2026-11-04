@@ -116,7 +116,7 @@ function clear<T extends { x: number; y: number }>(labels: T[], gap: number): T[
   return kept;
 }
 
-function Marker({ x, y, n, colour, r = 1.55 }: { x: number; y: number; n: number | string; colour: string; r?: number }) {
+function Marker({ x, y, n, colour, r = 1.75 }: { x: number; y: number; n: number | string; colour: string; r?: number }) {
   return (
     <g>
       <circle cx={x} cy={y} r={r} fill={colour} stroke="#fff" strokeWidth={0.4} />
