@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import island from '@/lib/maps/island.json';
 import town from '@/lib/maps/st-helier.json';
+import { PALETTE, onColour, tint } from '@/lib/domain/guide-colours';
 import { ISLAND_FRAME, TOWN_FRAME, TOWN_GRID, project } from '@/lib/domain/map-frame';
 import type { MapItem } from '@/lib/maps';
 
@@ -22,57 +23,59 @@ type MapData = {
 
 /** The categories' colours, as markers and index headings print them. */
 export const MAP_COLOURS: Record<string, string> = {
-  Attractions: '#e2312d',
-  'Heritage & culture': '#7d4a9c',
-  Shopping: '#bb4983',
-  Restaurants: '#93a962',
-  Activity: '#4e69a9',
-  Pubs: '#c9871a',
-  'Activity & travel': '#4e69a9',
-  Bars: '#5aa8b3',
-  'Coffee & cakes': '#a0704a',
+  Attractions: PALETTE.orange.hex,
+  'Heritage & culture': PALETTE.maroon.hex,
+  Shopping: PALETTE.blue.hex,
+  Restaurants: PALETTE.darkGreen.hex,
+  Activity: PALETTE.deepBlue.hex,
+  Pubs: PALETTE.green.hex,
+  'Activity & travel': PALETTE.deepBlue.hex,
+  Bars: PALETTE.orange.hex,
+  'Coffee & cakes': PALETTE.green.hex,
 };
-export const colourOf = (category: string) => MAP_COLOURS[category] ?? '#555';
+export const colourOf = (category: string) => MAP_COLOURS[category] ?? PALETTE.deepBlue.hex;
+const INK = PALETTE.deepBlue.hex;
 
-const SEA = '#cfe6f0';
-const LAND = '#fbf8f0';
+/** The maps in the Jersey palette: sand land, light blue sea, greens for the green spaces, orange main roads. */
+const SEA = tint(PALETTE.lightBlue.hex, 45);
+const LAND = PALETTE.sand.hex;
 
 /** How each layer draws, bottom to top. */
 const STYLE: Record<string, React.SVGProps<SVGPathElement>> = {
-  built: { fill: '#ece5d6' },
-  park: { fill: '#d6e9bf' },
-  golf: { fill: '#d6e9bf' },
-  heath: { fill: '#e3edcc' },
-  wood: { fill: '#bcd9a0' },
-  'national-park': { fill: '#9fcf7a', fillOpacity: 0.45, stroke: '#6aa84f', strokeWidth: 0.25, strokeDasharray: '0.8 0.5' },
-  sand: { fill: '#f5e6b3' },
-  rock: { fill: '#e2ded5' },
+  built: { fill: '#e8e4c4' },
+  park: { fill: tint(PALETTE.green.hex, 40) },
+  golf: { fill: tint(PALETTE.green.hex, 40) },
+  heath: { fill: tint(PALETTE.green.hex, 25) },
+  wood: { fill: tint(PALETTE.green.hex, 65) },
+  'national-park': { fill: PALETTE.green.hex, fillOpacity: 0.35, stroke: PALETTE.darkGreen.hex, strokeWidth: 0.25, strokeDasharray: '0.8 0.5' },
+  sand: { fill: '#f7e7a8' },
+  rock: { fill: '#e0dccb' },
   water: { fill: SEA },
-  airport: { fill: '#e8e4ea' },
-  runway: { fill: '#c9c4cc' },
-  'pedestrian-area': { fill: '#f6dfe0' },
-  building: { fill: '#e1d9ca', stroke: '#cfc5b3', strokeWidth: 0.05 },
-  stream: { fill: 'none', stroke: '#a9d3e6', strokeWidth: 0.25 },
-  'pier-line': { fill: 'none', stroke: '#b9b2a4', strokeWidth: 0.5 },
+  airport: { fill: '#e6e3d0' },
+  runway: { fill: '#cbc7b2' },
+  'pedestrian-area': { fill: tint(PALETTE.orange.hex, 15) },
+  building: { fill: '#e0dbbd', stroke: '#cbc4a3', strokeWidth: 0.05 },
+  stream: { fill: 'none', stroke: tint(PALETTE.blue.hex, 45), strokeWidth: 0.25 },
+  'pier-line': { fill: 'none', stroke: '#b9b29a', strokeWidth: 0.5 },
 };
 const LAYER_ORDER = ['built', 'park', 'golf', 'heath', 'wood', 'sand', 'rock', 'airport', 'runway', 'water', 'stream', 'national-park', 'pier-line', 'pedestrian-area', 'building'];
 
 /** Roads: a casing under, the fill over, widths in mm per map. */
 const ROADS: Record<'island' | 'town', Record<string, { w: number; fill: string; casing: string }>> = {
   island: {
-    minor: { w: 0.28, fill: '#ffffff', casing: '#cfc6b5' },
-    tertiary: { w: 0.45, fill: '#ffffff', casing: '#bfb5a2' },
-    secondary: { w: 0.6, fill: '#ffe08a', casing: '#c9a94a' },
-    primary: { w: 0.8, fill: '#f9b233', casing: '#c27f12' },
+    minor: { w: 0.28, fill: '#ffffff', casing: '#cdc6a8' },
+    tertiary: { w: 0.45, fill: '#ffffff', casing: '#bfb796' },
+    secondary: { w: 0.6, fill: tint(PALETTE.orange.hex, 35), casing: tint(PALETTE.orange.hex, 70) },
+    primary: { w: 0.8, fill: PALETTE.orange.hex, casing: PALETTE.maroon.hex },
   },
   town: {
-    path: { w: 0.25, fill: '#f6dfe0', casing: '#f6dfe0' },
-    service: { w: 0.45, fill: '#ffffff', casing: '#d8d0c0' },
-    pedestrian: { w: 0.95, fill: '#f6dfe0', casing: '#e2b9bb' },
-    minor: { w: 0.9, fill: '#ffffff', casing: '#c9bfae' },
-    tertiary: { w: 1.1, fill: '#ffffff', casing: '#bdb19c' },
-    secondary: { w: 1.3, fill: '#ffe08a', casing: '#c9a94a' },
-    primary: { w: 1.6, fill: '#f9b233', casing: '#c27f12' },
+    path: { w: 0.25, fill: tint(PALETTE.orange.hex, 15), casing: tint(PALETTE.orange.hex, 15) },
+    service: { w: 0.45, fill: '#ffffff', casing: '#d6cfb2' },
+    pedestrian: { w: 0.95, fill: tint(PALETTE.orange.hex, 15), casing: tint(PALETTE.orange.hex, 40) },
+    minor: { w: 0.9, fill: '#ffffff', casing: '#c6bea0' },
+    tertiary: { w: 1.1, fill: '#ffffff', casing: '#b9b090' },
+    secondary: { w: 1.3, fill: tint(PALETTE.orange.hex, 35), casing: tint(PALETTE.orange.hex, 70) },
+    primary: { w: 1.6, fill: PALETTE.orange.hex, casing: PALETTE.maroon.hex },
   },
 };
 
@@ -82,7 +85,7 @@ function Base({ data, which }: { data: MapData; which: 'island' | 'town' }) {
   return (
     <>
       <rect width={data.width} height={data.height} fill={SEA} />
-      <path d={data.land} fill={LAND} fillRule="evenodd" stroke="#8fbcd0" strokeWidth={which === 'town' ? 0.3 : 0.2} />
+      <path d={data.land} fill={LAND} fillRule="evenodd" stroke={tint(PALETTE.blue.hex, 40)} strokeWidth={which === 'town' ? 0.3 : 0.2} />
       {LAYER_ORDER.map((cls) => {
         const l = layer(cls);
         return l ? <path key={cls} d={l.d} fillRule="evenodd" {...STYLE[cls]} /> : null;
@@ -112,7 +115,7 @@ function Marker({ x, y, n, colour, r = 1.55 }: { x: number; y: number; n: number
   return (
     <g>
       <circle cx={x} cy={y} r={r} fill={colour} stroke="#fff" strokeWidth={0.3} />
-      <text x={x} y={y + r * 0.36} textAnchor="middle" fontSize={r * 1.05} fontWeight={700} fill="#fff">{n}</text>
+      <text x={x} y={y + r * 0.36} textAnchor="middle" fontSize={r * 1.05} fontWeight={500} fill={onColour(colour)}>{n}</text>
     </g>
   );
 }
@@ -127,10 +130,10 @@ export function IslandMap({ items }: { items: MapItem[] }) {
     <svg viewBox={`0 0 ${data.width} ${data.height}`} width={`${data.width}mm`} height={`${data.height}mm`} className="gp-map" fontFamily="var(--gp-cond)">
       <Base data={data} which="island" />
       {bays.map((l) => (
-        <text key={`b-${l.text}-${l.x}`} x={l.x} y={l.y} textAnchor="middle" fontSize={1.9} fontStyle="italic" fill="#4f8fab">{l.text}</text>
+        <text key={`b-${l.text}-${l.x}`} x={l.x} y={l.y} textAnchor="middle" fontSize={1.9} fontStyle="italic" fill={PALETTE.blue.hex}>{l.text}</text>
       ))}
       {names.map((l) => (
-        <text key={`p-${l.text}`} x={l.x} y={l.y - 1.2} textAnchor="middle" fontSize={l.text === 'St Helier' ? 3.2 : 2.1} fontWeight={600} fill="#5c544a" stroke={LAND} strokeWidth={0.5} paintOrder="stroke">{l.text}</text>
+        <text key={`p-${l.text}`} x={l.x} y={l.y - 1.2} textAnchor="middle" fontSize={l.text === 'St Helier' ? 3.2 : 2.1} fontWeight={500} fill={INK} stroke={LAND} strokeWidth={0.5} paintOrder="stroke">{l.text}</text>
       ))}
       {placed.map((i) => {
         const [x, y] = project(ISLAND_FRAME, i.lat!, i.lon!);
@@ -138,12 +141,12 @@ export function IslandMap({ items }: { items: MapItem[] }) {
           <Fragment key={i.id}>
             <Marker x={x} y={y} n={i.n} colour={colourOf(i.category)} />
             {i.labelled && (
-              <text x={x + 2} y={y + 0.7} fontSize={2.1} fontWeight={700} fill={colourOf(i.category)} stroke="#fff" strokeWidth={0.6} paintOrder="stroke">{i.n}. {i.label}</text>
+              <text x={x + 2} y={y + 0.7} fontSize={2.1} fontWeight={500} fill={INK} stroke="#fff" strokeWidth={0.6} paintOrder="stroke">{i.n}. {i.label}</text>
             )}
           </Fragment>
         );
       })}
-      <text x={data.width - 9} y={data.height - 3} textAnchor="end" fontSize={1.6} fill="#5a7f90">Map data © OpenStreetMap contributors</text>
+      <text x={data.width - 9} y={data.height - 3} textAnchor="end" fontSize={1.6} fill={INK}>Map data © OpenStreetMap contributors</text>
     </svg>
   );
 }
@@ -164,21 +167,21 @@ export function TownMap({ items }: { items: MapItem[] }) {
       <g clipPath="url(#town-clip)">
         <Base data={data} which="town" />
         {named.map((s, i) => (
-          <text key={i} fontSize={s.cls === 'primary' || s.cls === 'secondary' ? 1.5 : 1.25} fill="#5c544a" dy={0.45}>
+          <text key={i} fontSize={s.cls === 'primary' || s.cls === 'secondary' ? 1.5 : 1.25} fill={INK} dy={0.45}>
             <textPath href={`#st-${i}`} startOffset="50%" textAnchor="middle">{s.name}</textPath>
           </text>
         ))}
-        {Array.from({ length: cols - 1 }, (_, c) => <line key={`v${c}`} x1={(c + 1) * cell} x2={(c + 1) * cell} y1={0} y2={data.height} stroke="#7a9fb0" strokeWidth={0.12} strokeOpacity={0.6} />)}
-        {Array.from({ length: rows - 1 }, (_, r) => <line key={`h${r}`} y1={(r + 1) * cell} y2={(r + 1) * cell} x1={0} x2={data.width} stroke="#7a9fb0" strokeWidth={0.12} strokeOpacity={0.6} />)}
+        {Array.from({ length: cols - 1 }, (_, c) => <line key={`v${c}`} x1={(c + 1) * cell} x2={(c + 1) * cell} y1={0} y2={data.height} stroke={INK} strokeWidth={0.12} strokeOpacity={0.6} />)}
+        {Array.from({ length: rows - 1 }, (_, r) => <line key={`h${r}`} y1={(r + 1) * cell} y2={(r + 1) * cell} x1={0} x2={data.width} stroke={INK} strokeWidth={0.12} strokeOpacity={0.6} />)}
         {placed.map((i) => {
           const [x, y] = project(TOWN_FRAME, i.lat!, i.lon!);
           return <Marker key={i.id} x={x} y={y} n={i.n} colour={colourOf(i.category)} r={1.4} />;
         })}
-        <text x={data.width - 1.5} y={data.height - 1.5} textAnchor="end" fontSize={1.5} fill="#5a7f90">Map data © OpenStreetMap contributors</text>
+        <text x={data.width - 1.5} y={data.height - 1.5} textAnchor="end" fontSize={1.5} fill={INK}>Map data © OpenStreetMap contributors</text>
       </g>
-      <rect width={data.width} height={data.height} fill="none" stroke="#333" strokeWidth={0.2} />
-      {Array.from({ length: cols }, (_, c) => <text key={`c${c}`} x={(c + 0.5) * cell} y={-1.2} textAnchor="middle" fontSize={2.2} fontWeight={700}>{String.fromCharCode(65 + c)}</text>)}
-      {Array.from({ length: rows }, (_, r) => <text key={`r${r}`} x={-2} y={(r + 0.5) * cell + 0.8} textAnchor="middle" fontSize={2.2} fontWeight={700}>{r + 1}</text>)}
+      <rect width={data.width} height={data.height} fill="none" stroke={INK} strokeWidth={0.2} />
+      {Array.from({ length: cols }, (_, c) => <text key={`c${c}`} x={(c + 0.5) * cell} y={-1.2} textAnchor="middle" fontSize={2.2} fontWeight={500}>{String.fromCharCode(65 + c)}</text>)}
+      {Array.from({ length: rows }, (_, r) => <text key={`r${r}`} x={-2} y={(r + 0.5) * cell + 0.8} textAnchor="middle" fontSize={2.2} fontWeight={500}>{r + 1}</text>)}
     </svg>
   );
 }
@@ -188,11 +191,11 @@ function IndexColumn({ category, items }: { category: string; items: MapItem[] }
   const colour = colourOf(category);
   return (
     <div className="gm-col">
-      <h4 style={{ color: colour }}>{category}</h4>
+      <h4 style={{ borderBottom: `0.6pt solid ${colour}` }}>{category}</h4>
       <ol>
         {items.map((i) => (
           <li key={i.id}>
-            <span className="gm-num" style={{ background: colour }}>{i.n}</span>
+            <span className="gm-num" style={{ background: colour, color: onColour(colour) }}>{i.n}</span>
             <span className={i.missing ? 'gm-missing' : undefined}>{i.label}</span>
             {i.ref && <span className="gm-ref">{i.ref}</span>}
           </li>

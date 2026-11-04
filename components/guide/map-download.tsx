@@ -9,7 +9,7 @@ export function MapDownload({ target, name }: { target: string; name: string }) 
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
     // The page's typeface by name, since the SVG leaves the page's styles behind.
-    clone.setAttribute('font-family', "'Proxima Nova Condensed', 'Barlow Semi Condensed', sans-serif");
+    clone.setAttribute('font-family', "'Google Sans Flex', sans-serif");
     const blob = new Blob([`<?xml version="1.0" encoding="UTF-8"?>\n${clone.outerHTML}`], { type: 'image/svg+xml' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

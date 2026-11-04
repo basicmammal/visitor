@@ -1,9 +1,4 @@
-import '@fontsource/barlow-semi-condensed/400.css';
-import '@fontsource/barlow-semi-condensed/500.css';
-import '@fontsource/barlow-semi-condensed/500-italic.css';
-import '@fontsource/barlow-semi-condensed/600.css';
-import '@fontsource/barlow-semi-condensed/600-italic.css';
-import '@fontsource/barlow-semi-condensed/700.css';
+import '@fontsource-variable/google-sans-flex/wdth.css';
 import Link from 'next/link';
 import { GuideBook } from '@/components/guide/book';
 import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';

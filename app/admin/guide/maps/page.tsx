@@ -1,6 +1,4 @@
-import '@fontsource/barlow-semi-condensed/400.css';
-import '@fontsource/barlow-semi-condensed/600.css';
-import '@fontsource/barlow-semi-condensed/700.css';
+import '@fontsource-variable/google-sans-flex/wdth.css';
 import Link from 'next/link';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { Frame, type Section } from '@/components/guide/book';
@@ -8,6 +6,7 @@ import { IslandSpreadArt, TownSpreadArt, colourOf } from '@/components/guide/map
 import { MapDownload } from '@/components/guide/map-download';
 import islandData from '@/lib/maps/island.json';
 import { db } from '@/lib/db';
+import { PAGE_SWATCHES } from '@/lib/domain/guide-colours';
 import { MAPS, places, type MapName } from '@/lib/db/schema';
 import { editions } from '@/lib/guide';
 import { MAP_TITLE } from '@/lib/domain/map-seed';
@@ -17,7 +16,7 @@ import { addMapEntry, fillTownMap, moveMapEntry, removeMapEntry, seedIslandMap, 
 
 export const dynamic = 'force-dynamic';
 
-const MAPS_SECTION: Section = { name: 'Maps', colour: '#78c9d2' };
+const MAPS_SECTION: Section = { name: 'Maps', colour: PAGE_SWATCHES.maps.hex };
 
 /** One page of a spread: the spread's artwork, shifted so this page shows its half. */
 function Half({ art, side }: { art: React.ReactNode; side: 'left' | 'right' }) {

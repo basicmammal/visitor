@@ -5,7 +5,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode 
 import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
-import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
+import { PAGE_SWATCHES, onColour, sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
 
@@ -14,8 +14,9 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
  * merge files: 230 × 165mm spreads of two 115 × 165mm pages. Events on a
  * two-column grid, orange; walks and tours in one ruled
  * column, green, after the providers' key. A coloured tab and the folio
- * on each outer edge. Proxima Nova where the browser has it (Adobe
- * Fonts), Barlow Semi Condensed where it does not.
+ * on each outer edge. Type and colour as the Jersey brand guidelines
+ * (docs/brand-guidelines.md): GT Flaire Extra for headings where it is
+ * installed, Google Sans Flex for everything else, text in deep blue.
  *
  * Events six to a page, the pictured pair across the top and four
  * listings under them; or on a grid of six or eight boxes, one of them a
@@ -25,9 +26,9 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
  */
 
 export type Section = { name: string; colour: string };
-export const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
-const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
-const NEW: Section = { name: 'New this season', colour: '#e5007e' };
+export const EVENTS: Section = { name: 'Events this season', colour: PAGE_SWATCHES.events.hex };
+const TOURS: Section = { name: 'Walks and tours', colour: PAGE_SWATCHES.tours.hex };
+const NEW: Section = { name: 'New this season', colour: PAGE_SWATCHES.new.hex };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
 export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
@@ -45,7 +46,7 @@ function Folio({ n, side }: { n: number; side: 'left' | 'right' }) {
 export function Frame({ page, n }: { page: Page; n: number }) {
   const side = n % 2 === 0 ? 'left' : 'right';
   return (
-    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-tint20': tint(page.section.colour, 20), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
+    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-on-accent': onColour(page.section.colour), '--gp-tint20': tint(page.section.colour, 20), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
       {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
       {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import '@fontsource-variable/josefin-sans';
-import '@fontsource-variable/mulish';
+import '@fontsource-variable/google-sans-flex';
 import './globals.css';
 import { SITE, SITE_NAME } from '@/lib/agents/data';
 

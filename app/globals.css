@@ -3,7 +3,24 @@
 @tailwind utilities;
 
 :root { color-scheme: light; }
-body { @apply bg-white text-stone-900 antialiased; }
+body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height: 1.4; }
+
+/*
+ * GT Flaire Extra, the Jersey headline face (Grilli Type, licensed). Used
+ * wherever it is installed; for everyone else, once the web licence is
+ * bought, put GT-Flaire-Extra-Regular.woff2 in public/fonts and add
+ *   url('/fonts/GT-Flaire-Extra-Regular.woff2') format('woff2')
+ * to src below. Until then headings fall back to Google Sans Flex.
+ */
+@font-face {
+  font-family: 'GT Flaire Extra';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('GT Flaire Extra Regular'), local('GTFlaireExtra-Regular'), local('GT Flaire Extra');
+}
+/* Headlines in GT Flaire are regular weight, 110% line height, as the guidelines set them. */
+.font-display { line-height: 1.1; font-synthesis-weight: none; }
 
 @media print {
   @page { size: A4; margin: 14mm; }
@@ -50,26 +67,30 @@ body { @apply bg-white text-stone-900 antialiased; }
  * 230 × 165mm spreads of 115 × 165mm pages. Outer margin 8mm, inner
  * 12mm. Events: a 2 × 2 grid of 45.5mm cells, a 45.5 × 16mm picture
  * each, rows 72mm apart from 11.6mm down. Tours: one ruled column.
- * Proxima Nova Condensed where installed (Adobe Fonts); Barlow Semi
- * Condensed otherwise, so the proof is close but the type is not final.
+ * Type and colour from the Jersey brand guidelines: Google Sans Flex
+ * Light, Medium to pick things out (never bold), GT Flaire Extra for
+ * headings; text in deep blue or white only.
  */
 .gp-book {
-  --gp-ink: #000; --gp-ink80: rgb(0 0 0 / 0.8);
-  --gp-orange: #f58353; --gp-green: #93b66d; --gp-pale: #add581; --gp-teal: #43a19a; --gp-deep: #009187;
-  --gp-cond: 'Proxima Nova Condensed', 'ProximaNovaCond', 'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
-  --gp-sans: 'Proxima Nova', 'Mulish Variable', 'Helvetica Neue', Arial, sans-serif;
+  /* Jersey brand (docs/brand-guidelines.md): text in deep blue; colour for tabs, rules and chips. */
+  --gp-ink: #022e3c; --gp-ink80: rgb(2 46 60 / 0.8);
+  --gp-events: #f64e16; --gp-tours: #1d521e; --gp-tours-light: #a4c43c;
+  /* Google Sans Flex for all copy, a touch condensed for the pocket page; GT Flaire Extra for headings, where installed. */
+  --gp-cond: 'Google Sans Flex Variable', 'Google Sans Flex', 'Arial Narrow', sans-serif;
+  --gp-sans: 'Google Sans Flex Variable', 'Google Sans Flex', 'Helvetica Neue', Arial, sans-serif;
+  --gp-head: 'GT Flaire Extra', 'GT Flaire', 'Google Sans Flex Variable', 'Google Sans Flex', sans-serif;
   display: flex; flex-direction: column; align-items: center; gap: 8mm; color: var(--gp-ink);
 }
 .gp-spread { display: flex; box-shadow: 0 1px 4px rgb(0 0 0 / 0.18); background: white; }
-.gp-page { position: relative; width: 115mm; height: 165mm; overflow: hidden; background: white; font-family: var(--gp-cond); }
+.gp-page { position: relative; width: 115mm; height: 165mm; overflow: hidden; background: white; font-family: var(--gp-cond); font-stretch: 87.5%; font-weight: 300; }
 .gp-page.gp-left { border-right: 0.2mm dashed rgb(0 0 0 / 0.08); }
 .gp-blank { background: #fafaf9; }
 .gp-tab { position: absolute; top: 8.1mm; width: 3.9mm; height: 33.9mm; display: flex; align-items: center; justify-content: center; z-index: 2; }
 .gp-tab.gp-left { left: 0; } .gp-tab.gp-right { right: 0; }
-.gp-tab span { writing-mode: vertical-rl; color: white; font-family: var(--gp-sans); font-weight: 600; font-size: 5.2pt; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
-.gp-folio { position: absolute; top: 148.9mm; width: 3.9mm; height: 8.1mm; background: #000; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.gp-tab span { writing-mode: vertical-rl; color: var(--gp-on-accent, white); font-family: var(--gp-sans); font-weight: 500; font-size: 5.2pt; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.gp-folio { position: absolute; top: 148.9mm; width: 3.9mm; height: 8.1mm; background: var(--gp-ink); display: flex; align-items: center; justify-content: center; z-index: 2; }
 .gp-folio.gp-left { left: 0; } .gp-folio.gp-right { right: 0; }
-.gp-folio span { writing-mode: vertical-rl; color: white; font-family: var(--gp-sans); font-weight: 700; font-size: 6pt; }
+.gp-folio span { writing-mode: vertical-rl; color: white; font-family: var(--gp-sans); font-weight: 500; font-size: 6pt; }
 .gp-folio.gp-left span { transform: rotate(180deg); }
 .gp-content { position: absolute; top: 8.5mm; bottom: 15mm; }
 .gp-page.gp-left .gp-content { left: 7.9mm; right: 12mm; }
@@ -99,35 +120,36 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-grid16.gp-venue-grid .gp-venue { padding-top: 0.8mm; }
 .gp-grid16 .gp-tour-meta { margin-top: 0.3mm; font-size: 6.5pt; }
 .gp-image { margin: 0; }
-.gp-tour-grid .gp-listing { border-top-color: var(--gp-green); }
-.gp-tour-grid .gp-event-title { color: var(--gp-green); }
+.gp-tour-grid .gp-listing { border-top-color: var(--gp-ink); }
+.gp-tour-grid .gp-event-title { color: var(--gp-ink); }
 /* Key icons: two at most on a listing, top right; the page's key runs down the 3.9mm edge column under the tabs, 4mm clear of the grid. */
 .gp-icons { float: right; display: inline-flex; gap: 0.8mm; margin: 0.2mm 0 0 1mm; color: var(--gp-ink80); }
 .gp-icons svg { width: 3mm; height: 3mm; }
-.gp-key { position: absolute; width: 3.9mm; bottom: 18mm; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 1.6mm; writing-mode: vertical-rl; overflow: hidden; z-index: 2; font-family: var(--gp-sans); font-weight: 600; font-size: 5pt; letter-spacing: 0.02em; text-transform: uppercase; color: var(--gp-ink80); }
+.gp-key { position: absolute; width: 3.9mm; bottom: 18mm; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 1.6mm; writing-mode: vertical-rl; overflow: hidden; z-index: 2; font-family: var(--gp-sans); font-weight: 500; font-size: 5pt; letter-spacing: 0.02em; text-transform: uppercase; color: var(--gp-ink80); }
 .gp-key.gp-left { left: 0; } .gp-key.gp-right { right: 0; }
 .gp-key.gp-below-tab { top: 44mm; } .gp-key.gp-below-marker { top: 74.6mm; }
 .gp-key span { display: inline-flex; align-items: center; gap: 0.8mm; white-space: nowrap; }
 .gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
-.gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-pale); }
-.gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 600; font-size: 7pt; color: var(--gp-teal); }
+.gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-tours-light); }
+.gp-tab.gp-marker span { color: var(--gp-ink); }
+.gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 500; font-size: 7pt; color: var(--gp-ink); }
 .gp-page.gp-left .gp-tour-footer { left: 8.1mm; } .gp-page.gp-right .gp-tour-footer { right: 8.1mm; }
 .gp-tour-footer svg { width: 2.8mm; height: 2.8mm; }
 .gp-tour-meta { display: flex; flex-wrap: wrap; margin: 0.8mm 0 0 -1mm; }
 .gp-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.gp-listing { border-top: 0.6pt solid var(--gp-orange); padding-top: 1.6mm; }
+.gp-listing { border-top: 0.6pt solid var(--gp-events); padding-top: 1.6mm; }
 .gp-event { overflow: hidden; font-size: 8.5pt; line-height: 1.08; }
-.gp-event-image { display: block; width: 45.5mm; height: 15.9mm; object-fit: cover; border-bottom: 0.6pt solid var(--gp-orange); margin-bottom: 2.6mm; }
-.gp-event-when { font-weight: 600; font-size: 9pt; text-transform: uppercase; }
+.gp-event-image { display: block; width: 45.5mm; height: 15.9mm; object-fit: cover; border-bottom: 0.6pt solid var(--gp-events); margin-bottom: 2.6mm; }
+.gp-event-when { font-weight: 500; font-size: 9pt; text-transform: uppercase; }
 .gp-event-when em { font-weight: 500; font-style: italic; color: var(--gp-ink80); margin-left: 2mm; text-transform: none; }
-.gp-event-title { font-weight: 700; font-size: 9pt; color: var(--gp-orange); margin: 0.2mm 0 0.3mm; }
-.gp-event-copy { font-weight: 400; }
-.gp-price { color: var(--gp-orange); }
-.gp-event-venue { margin-top: 2.2mm; font-weight: 700; font-size: 7.5pt; color: var(--gp-orange); display: flex; align-items: center; gap: 0.8mm; }
-.gp-event-venue svg { width: 2.4mm; height: 2.4mm; stroke-width: 2.4; flex: none; color: rgb(0 0 0 / 0.7); }
-.gp-event-address, .gp-event-contact { font-size: 7.5pt; color: var(--gp-orange); font-style: italic; font-stretch: condensed; }
-.gp-event-address { font-weight: 600; }
-.gp-event-web { margin-top: 1.4mm; font-weight: 700; font-size: 7.5pt; color: var(--gp-ink80); text-transform: uppercase; overflow-wrap: anywhere; }
+.gp-event-title { font-weight: 500; font-size: 9pt; color: var(--gp-ink); margin: 0.2mm 0 0.3mm; }
+.gp-event-copy { font-weight: 300; }
+.gp-price { color: var(--gp-ink); }
+.gp-event-venue { margin-top: 2.2mm; font-weight: 500; font-size: 7.5pt; color: var(--gp-ink); display: flex; align-items: center; gap: 0.8mm; }
+.gp-event-venue svg { width: 2.4mm; height: 2.4mm; stroke-width: 2.4; flex: none; color: var(--gp-ink80); }
+.gp-event-address, .gp-event-contact { font-size: 7.5pt; color: var(--gp-ink); font-style: italic; font-stretch: condensed; }
+.gp-event-address { font-weight: 500; }
+.gp-event-web { margin-top: 1.4mm; font-weight: 500; font-size: 7.5pt; color: var(--gp-ink80); text-transform: uppercase; overflow-wrap: anywhere; }
 .gp-overset { outline: 0.6mm solid #dc2626; outline-offset: 0.6mm; }
 /* Venue sections, on the events' grid for now, in the section's colour (--gp-accent, set on each page). */
 .gp-venue-grid .gp-venue { border-top: 0.6pt solid var(--gp-accent); padding-top: 1.6mm; }
@@ -144,37 +166,37 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-venue-text { min-width: 0; overflow: hidden; }
 .gp-venue-picture { position: relative; overflow: hidden; background: #e7e5e4; }
 .gp-venue-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.gp-venue-label { position: absolute; left: 0; top: 0; background: var(--gp-tint20); color: var(--gp-accent); font-family: var(--gp-sans); font-weight: 700; font-size: 6pt; letter-spacing: 0.04em; padding: 0.6mm 1.4mm; }
+.gp-venue-label { position: absolute; left: 0; top: 0; background: var(--gp-tint20); color: var(--gp-ink); font-family: var(--gp-sans); font-weight: 500; font-size: 6pt; letter-spacing: 0.04em; padding: 0.6mm 1.4mm; }
 .gp-venue-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5mm; margin-bottom: 0.4mm; }
-.gp-venue-name { font-weight: 700; font-size: 9pt; color: var(--gp-accent); }
+.gp-venue-name { font-weight: 500; font-size: 9pt; color: var(--gp-ink); }
 .gp-venue-three-quarters .gp-venue-name, .gp-venue-half .gp-venue-name { font-size: 12pt; }
 /* The bigger venue entries' copy, set with room between its lines as the guide prints it; the listing boxes stay tight. */
 .gp-venue-three-quarters .gp-event-copy, .gp-venue-half .gp-event-copy, .gp-venue-quarter .gp-event-copy { line-height: 1.2; }
 .gp-venue-quarter .gp-venue-name { font-size: 10.5pt; }
-.gp-venue-tag { flex: none; font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-accent); background: var(--gp-tint20); padding: 0.3mm 1mm; }
-.gp-venue-new { background: var(--gp-accent); color: white; }
+.gp-venue-tag { flex: none; font-family: var(--gp-sans); font-weight: 500; font-size: 5.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-ink); background: var(--gp-tint20); padding: 0.3mm 1mm; }
+.gp-venue-new { background: var(--gp-accent); color: var(--gp-on-accent, white); }
 .gp-venue-name-big .gp-venue-new { margin-left: 2mm; vertical-align: middle; font-size: 6.5pt; }
 .gp-venue .gp-event-address { color: var(--gp-ink80); margin-top: 1.2mm; }
 .gp-venue-full .gp-venue-picture { height: 62mm; margin-bottom: 3mm; }
-.gp-venue-name-big { display: block; font-size: 15pt; line-height: 1.05; margin: 0.5mm 0 2mm; }
+.gp-venue-name-big { display: block; font-family: var(--gp-head); font-weight: 400; font-size: 15pt; line-height: 1.05; margin: 0.5mm 0 2mm; }
 .gp-venue-copy { font-size: 8.5pt; line-height: 1.15; }
 .gp-venue-copy p + p { margin-top: 1.5mm; }
-.gp-venue-copy .gp-standfirst { font-weight: 700; }
+.gp-venue-copy .gp-standfirst { font-weight: 500; }
 .gp-venue-foot { position: absolute; left: 0; right: 0; bottom: 0; font-size: 7.5pt; line-height: 1.3; }
 .gp-venue-foot p { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5mm 2mm; }
-.gp-venue-foot b { color: var(--gp-accent); font-size: 9pt; display: inline-flex; align-items: center; gap: 0.8mm; }
+.gp-venue-foot b { color: var(--gp-ink); font-size: 9pt; display: inline-flex; align-items: center; gap: 0.8mm; }
 .gp-venue-foot em { color: var(--gp-ink80); }
 .gp-venue-foot strong { display: inline-flex; align-items: center; gap: 0.8mm; }
 .gp-venue-foot svg { width: 2.6mm; height: 2.6mm; flex: none; }
-.gp-venue-where { font-weight: 600; font-style: italic; color: var(--gp-ink80); }
+.gp-venue-where { font-weight: 500; font-style: italic; color: var(--gp-ink80); }
 .gp-do-name { display: block; font-size: 10pt; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.6mm; }
-.gp-do-codes { margin-top: 1.2mm; display: flex; align-items: center; gap: 0.8mm; font-family: var(--gp-sans); font-weight: 700; font-size: 7pt; color: var(--gp-accent); word-spacing: 0.6mm; }
+.gp-do-codes { margin-top: 1.2mm; display: flex; align-items: center; gap: 0.8mm; font-family: var(--gp-sans); font-weight: 500; font-size: 7pt; color: var(--gp-ink); word-spacing: 0.6mm; }
 .gp-do-codes svg { width: 2.6mm; height: 2.6mm; flex: none; }
 .gp-grid16 .gp-do-name { font-size: 8pt; }
-.gp-directory-heading { font-family: var(--gp-sans); font-weight: 700; font-size: 11pt; color: var(--gp-accent); margin-bottom: 1.5mm; }
+.gp-directory-heading { font-family: var(--gp-head); font-weight: 400; line-height: 1.1; font-size: 11pt; color: var(--gp-ink); margin-bottom: 1.5mm; }
 .gp-directory { display: flex; flex-direction: column; font-size: 7.5pt; line-height: 1.2; border-bottom: 0.5pt solid var(--gp-accent); padding: 0.6mm 0; }
 .gp-directory-head { display: flex; align-items: baseline; gap: 1mm; }
-.gp-directory b { font-weight: 700; color: var(--gp-accent); }
+.gp-directory b { font-weight: 500; color: var(--gp-ink); }
 .gp-directory-more { color: var(--gp-ink80); font-style: italic; padding-left: 4mm; }
 /* A section's index: two columns, each poured to the page's depth. */
 .gp-index { display: grid; grid-template-columns: 1fr 1fr; column-gap: 4mm; align-items: start; }
@@ -184,37 +206,38 @@ body { @apply bg-white text-stone-900 antialiased; }
 /* The section opener: a picture to the edges and the section's name. */
 .gp-opener { position: absolute; inset: 0; background: #57534e; }
 .gp-opener img { width: 100%; height: 100%; object-fit: cover; }
-.gp-opener h2 { position: absolute; left: 8.1mm; bottom: 34mm; color: white; font-family: var(--gp-sans); font-weight: 800; font-size: 30pt; line-height: 0.92; text-transform: uppercase; text-shadow: 0 0.5mm 2mm rgb(0 0 0 / 0.35); }
-.gp-caption { position: absolute; left: 8.1mm; bottom: 10mm; max-width: 80mm; background: #000; color: white; font-family: var(--gp-sans); font-weight: 600; font-size: 5.5pt; padding: 0.8mm 1.5mm; }
+.gp-opener h2 { position: absolute; left: 8.1mm; bottom: 34mm; color: white; font-family: var(--gp-head); font-weight: 400; font-size: 30pt; line-height: 1; text-transform: uppercase; text-shadow: 0 0.5mm 2mm rgb(0 0 0 / 0.35); }
+.gp-caption { position: absolute; left: 8.1mm; bottom: 10mm; max-width: 80mm; background: var(--gp-ink); color: white; font-family: var(--gp-sans); font-weight: 500; font-size: 5.5pt; padding: 0.8mm 1.5mm; }
 
 .gp-highlight-image { width: 100%; height: 62mm; object-fit: cover; margin-bottom: 3mm; }
-.gp-highlight-title { font-weight: 700; font-size: 15pt; line-height: 1.05; color: var(--gp-orange); margin: 0.5mm 0 2mm; }
+.gp-highlight-title { font-family: var(--gp-head); font-weight: 400; font-size: 15pt; line-height: 1.05; color: var(--gp-ink); margin: 0.5mm 0 2mm; }
 .gp-highlight-copy { font-size: 8.5pt; line-height: 1.15; column-count: 2; column-gap: 3.9mm; }
 .gp-highlight-copy p + p { margin-top: 1.5mm; }
 
 /* Walks and tours: one ruled column, poured page by page. */
 .gp-flow, .gp-measure { font-size: 7pt; }
-.gp-measure { position: absolute; left: -9999px; top: 0; width: 94.9mm; font-family: var(--gp-cond); }
-.gp-key-heading { font-family: var(--gp-sans); font-weight: 700; font-size: 12pt; color: var(--gp-deep); margin-bottom: 1mm; }
-.gp-provider { display: flex; align-items: center; gap: 1mm; white-space: nowrap; overflow: hidden; font-size: 8pt; line-height: 1.25; color: var(--gp-teal); border-bottom: 0.5pt solid var(--gp-pale); padding: 0.25mm 0; }
+.gp-measure { position: absolute; left: -9999px; top: 0; width: 94.9mm; font-family: var(--gp-cond); font-stretch: 87.5%; font-weight: 300; }
+.gp-key-heading { font-family: var(--gp-head); font-weight: 400; line-height: 1.1; font-size: 12pt; color: var(--gp-ink); margin-bottom: 1mm; }
+.gp-provider { display: flex; align-items: center; gap: 1mm; white-space: nowrap; overflow: hidden; font-size: 8pt; line-height: 1.25; color: var(--gp-ink); border-bottom: 0.5pt solid var(--gp-tours-light); padding: 0.25mm 0; }
 .gp-provider svg { width: 2.8mm; height: 2.8mm; flex: none; }
-.gp-provider b { font-weight: 700; }
-.gp-provider strong { color: var(--gp-ink); font-weight: 700; font-size: 8.5pt; }
+.gp-provider b { font-weight: 500; }
+.gp-provider strong { color: var(--gp-ink); font-weight: 500; font-size: 8.5pt; }
 .gp-provider em { color: var(--gp-ink80); font-size: 8.5pt; font-stretch: condensed; overflow: hidden; text-overflow: ellipsis; }
 .gp-break { height: 3mm; }
-.gp-tour-heading { margin: 1mm 0 3.5mm; color: var(--gp-pale); font-family: var(--gp-sans); }
-.gp-tour-heading p { font-weight: 700; font-size: 9pt; }
+.gp-tour-heading { margin: 1mm 0 3.5mm; color: var(--gp-ink); font-family: var(--gp-sans); }
+.gp-tour-heading h3 { font-family: var(--gp-head); }
+.gp-tour-heading p { font-weight: 500; font-size: 9pt; }
 .gp-tour-heading h3 { font-size: 18pt; line-height: 1.1; font-weight: 400; }
-.gp-tour-heading h3 b { font-weight: 700; }
-.gp-tour { border-top: 0.5pt solid var(--gp-pale); padding: 0.7mm 0 2.6mm; }
+.gp-tour-heading h3 b { font-weight: 500; }
+.gp-tour { border-top: 0.5pt solid var(--gp-tours-light); padding: 0.7mm 0 2.6mm; }
 .gp-tour-head { font-size: 8pt; line-height: 1.3; }
-.gp-tour-head b { font-weight: 700; color: var(--gp-ink); }
-.gp-tour-title { font-weight: 700; color: var(--gp-green); margin-left: 0.6mm; }
+.gp-tour-head b { font-weight: 500; color: var(--gp-ink); }
+.gp-tour-title { font-weight: 500; color: var(--gp-ink); margin-left: 0.6mm; }
 .gp-code, .gp-duration { display: inline-flex; align-items: center; gap: 0.4mm; margin-left: 1mm; }
-.gp-code { color: var(--gp-teal); font-size: 7.5pt; }
-.gp-duration { font-weight: 600; font-style: italic; font-size: 7pt; color: var(--gp-ink80); }
+.gp-code { color: var(--gp-ink); font-size: 7.5pt; }
+.gp-duration { font-weight: 500; font-style: italic; font-size: 7pt; color: var(--gp-ink80); }
 .gp-code svg, .gp-duration svg { width: 2.6mm; height: 2.6mm; }
-.gp-tour-copy { font-family: var(--gp-sans); font-weight: 500; font-size: 7pt; line-height: 1.38; color: var(--gp-ink80); margin-top: 0.4mm; }
+.gp-tour-copy { font-family: var(--gp-sans); font-weight: 300; font-size: 7pt; line-height: 1.38; color: var(--gp-ink80); margin-top: 0.4mm; }
 
 @media print {
   @page gpspread { size: 230mm 165mm; margin: 0; }
@@ -228,8 +251,8 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-directory .gp-area-code { margin: 0 1mm 0 0; }
 .gp-area-key { flex-wrap: wrap; gap: 0.6mm 3mm; max-width: 120mm; }
 .gp-area-key span { display: inline-flex; align-items: center; gap: 0.6mm; }
-.gp-area-key b { font-weight: 800; }
-.gp-do-side { font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-teal); margin: 0 0 0.4mm; }
+.gp-area-key b { font-weight: 500; }
+.gp-do-side { font-family: var(--gp-sans); font-weight: 500; font-size: 5.5pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-ink); margin: 0 0 0.4mm; }
 /* When a venue opens, under how to reach it; and the winter edition's look ahead to the new season. */
 .gp-venue-open { display: flex; align-items: center; gap: 0.8mm; font-family: var(--gp-sans); font-size: 6.5pt; color: var(--gp-ink80); }
 .gp-venue-open svg { width: 2.4mm; height: 2.4mm; flex: none; }
@@ -237,32 +260,32 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-ahead-intro { font-size: 9pt; font-style: italic; color: var(--gp-ink80); margin: 0 0 3mm; }
 .gp-ahead-row { display: grid; grid-template-columns: 20mm 1fr; column-gap: 2mm; padding: 1.4mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; align-items: start; }
 .gp-ahead-row.gp-ahead-pictured { grid-template-columns: 20mm 1fr 16mm; }
-.gp-ahead-when { font-family: var(--gp-sans); font-weight: 800; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-accent); }
-.gp-ahead-row b { font-weight: 700; color: var(--gp-accent); }
+.gp-ahead-when { font-family: var(--gp-sans); font-weight: 500; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-ink); }
+.gp-ahead-row b { font-weight: 500; color: var(--gp-ink); }
 .gp-ahead-line { margin: 0.3mm 0; }
 .gp-ahead-contact { color: var(--gp-ink80); font-style: italic; font-size: 7pt; }
 .gp-ahead-thumb { width: 16mm; height: 16mm; object-fit: cover; }
 .gp-new-row { display: grid; grid-template-columns: 24mm 1fr; column-gap: 3mm; padding: 2mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; align-items: start; }
 .gp-new-row.gp-new-bare { grid-template-columns: 1fr; }
 .gp-new-thumb { width: 24mm; height: 18mm; object-fit: cover; }
-.gp-new-kind { display: block; font-family: var(--gp-sans); font-weight: 800; font-size: 6pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-accent); }
-.gp-new-row b { font-weight: 700; font-size: 9pt; color: var(--gp-ink); }
+.gp-new-kind { display: block; font-family: var(--gp-sans); font-weight: 500; font-size: 6pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-ink); }
+.gp-new-row b { font-weight: 500; font-size: 9pt; color: var(--gp-ink); }
 .gp-new-line { margin: 0.4mm 0; }
 
 /* The guide's maps (components/guide/maps.tsx): spread artwork laid across two pages. */
-.gm-spread { position: absolute; top: 0; width: 230mm; height: 165mm; font-family: var(--gp-cond); }
+.gm-spread { position: absolute; top: 0; width: 230mm; height: 165mm; font-family: var(--gp-cond); font-stretch: 87.5%; font-weight: 300; color: var(--gp-ink); }
 .gm-spread > svg.gp-map { position: absolute; left: 0; top: 0; }
 .gm-index { position: absolute; display: flex; gap: 3mm; }
 .gm-island-index { top: 7mm; }
 .gm-col { width: 31mm; }
-.gm-col h4 { font-family: var(--gp-sans); font-weight: 800; font-size: 6pt; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.8mm; }
+.gm-col h4 { font-family: var(--gp-head); font-weight: 400; font-size: 8pt; line-height: 1.1; margin: 0 0 0.8mm; padding-bottom: 0.5mm; }
 .gm-col ol { list-style: none; margin: 0; padding: 0; }
 .gm-col li { display: flex; align-items: center; gap: 1mm; font-size: 6.5pt; line-height: 1.2; margin-bottom: 0.2mm; }
-.gm-num { flex: none; width: 2.9mm; height: 2.9mm; border-radius: 50%; color: white; font-weight: 700; font-size: 5pt; display: inline-flex; align-items: center; justify-content: center; }
-.gm-ref { margin-left: auto; font-weight: 700; }
+.gm-num { flex: none; width: 2.9mm; height: 2.9mm; border-radius: 50%; color: white; font-weight: 500; font-size: 5pt; display: inline-flex; align-items: center; justify-content: center; }
+.gm-ref { margin-left: auto; font-weight: 500; }
 .gm-missing { color: #c00; text-decoration: underline dotted; }
-.gm-note { position: absolute; margin: 0; font-size: 6pt; font-style: italic; color: #3f7891; text-align: right; }
+.gm-note { position: absolute; margin: 0; font-size: 6pt; font-style: italic; color: var(--gp-ink); text-align: right; }
 .gm-locator { left: 192mm; top: 8mm; width: 30mm; flex-direction: column; gap: 2mm; }
-.gm-locator h3 { font-family: var(--gp-sans); font-weight: 800; font-size: 8pt; margin: 0; }
+.gm-locator h3 { font-family: var(--gp-head); font-weight: 400; line-height: 1.1; font-size: 8pt; margin: 0; }
 .gm-locator .gm-col { width: 30mm; }
 @media print { .gm-missing { color: inherit; text-decoration: none; } }
