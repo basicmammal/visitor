@@ -12,7 +12,7 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
 /**
  * The guide's pages as the 2026 editions print them, from the InDesign
  * merge files: 230 × 165mm spreads of two 115 × 165mm pages. Events on a
- * two-column grid, orange; walks and tours in one ruled
+ * two-column grid, orange; tours and experiences in one ruled
  * column, green, after the providers' key. A coloured tab and the folio
  * on each outer edge. Type and colour as the Jersey brand guidelines
  * (docs/brand-guidelines.md): GT Flaire Extra for headings where it is
@@ -27,7 +27,7 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
 
 export type Section = { name: string; colour: string };
 export const EVENTS: Section = { name: 'Events this season', colour: PAGE_SWATCHES.events.hex };
-const TOURS: Section = { name: 'Walks and tours', colour: PAGE_SWATCHES.tours.hex };
+const TOURS: Section = { name: 'Tours and experiences', colour: PAGE_SWATCHES.tours.hex };
 const NEW: Section = { name: 'New this season', colour: PAGE_SWATCHES.new.hex };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
 export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
@@ -450,10 +450,12 @@ export function GuideBook(props: {
   /** Do's activities and providers' key, after Do's venue pages. */
   doSection?: DoSection | null;
   firstPage: number;
+  /** Where the section tabs sit: down the outer edge, as printed, or across the top (a preview). */
+  tabs?: 'side' | 'top';
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
 
-  // Walks and tours flow: the key, then dated tours, then on-demand ones by genre.
+  // Tours and experiences flow: the key, then dated tours, then on-demand ones by genre.
   const [flow] = useState<Flow[]>(() => {
     const items: Flow[] = [];
     if (providers.length) {
@@ -652,7 +654,7 @@ export function GuideBook(props: {
   for (; k < numbered.length; k += 2) spreads.push([numbered[k]!, numbered[k + 1] ?? null]);
 
   return (
-    <div className="gp-book">
+    <div className={`gp-book${props.tabs === 'top' ? ' gp-tabs-top' : ''}`}>
       {measuring}
       {measuringDir}
       {measuringDo}

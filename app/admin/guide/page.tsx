@@ -77,6 +77,11 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         <div className="space-y-1.5">
           <p className="text-xs text-stone-500">Template, section by section. On a grid each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph. A venue&apos;s booked space is the same share of a page on either grid; the grid sets the size of the listings around it. Pages for listings rations the places without booked space: those featured or printed before keep a box, the rest go to the section&apos;s index.</p>
           <div className="flex flex-wrap items-center gap-2">
+            <span className="w-24 text-xs text-stone-500">Tabs</span>
+            <Link href={`${href(window)}`} className={pill(one(sp.tabs) !== 'top')}>Down the edge</Link>
+            <Link href={`${href(window)}&tabs=top`} className={pill(one(sp.tabs) === 'top')}>Across the top (preview)</Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <span className="w-24 text-xs text-stone-500">What&apos;s On</span>
             {eventLayouts.map(([g, label]) => <Link key={g} href={with_({ events: g })} className={pill(layouts.events === g)}>{label}</Link>)}
           </div>
@@ -136,7 +141,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayout={layouts.tours} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayout={layouts.tours} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} tabs={one(sp.tabs) === 'top' ? 'top' : 'side'} />
 
     </>
   );

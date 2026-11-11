@@ -40,7 +40,7 @@ Jersey or the printer before press.**
 | Orange | `#F64E16` | 246 78 22 | 0 68 91 4 | **What's On**, **New this season**; main roads |
 | Deep blue | `#022E3C` | 2 46 60 | 97 23 0 76 | **All text**; **Do**; folios |
 | Blue | `#2A55EB` | 42 85 235 | 82 64 0 8 | **Visit** |
-| Dark green | `#1D521E` | 29 82 30 | 65 0 63 68 | **Walks and tours** |
+| Dark green | `#1D521E` | 29 82 30 | 65 0 63 68 | **Tours and experiences** |
 | Maroon | `#61140C` | 97 20 12 | 0 79 88 62 | **Buy** |
 
 **Primary pairings** (Jersey's two lead combinations, for covers, openers and adverts): blue with
@@ -63,7 +63,7 @@ light blue; green with dark green.
 | Section | Colour | Tab type |
 |---|---|---|
 | What's On (events) | Orange | White |
-| Walks and tours | Dark green (rules), green (markers) | White |
+| Tours and experiences | Dark green (rules), green (markers) | White |
 | New this season | Orange | White |
 | Visit | Blue | White |
 | Eat | Green | White |

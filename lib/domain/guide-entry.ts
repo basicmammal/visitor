@@ -618,7 +618,7 @@ export function guideTour(
 const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : t.genre || 'On demand');
 
-/** Walks and tours on the grid of eight, in the order they print: seven listings and a picture a page. */
+/** Tours and experiences on the grid of eight, in the order they print: seven listings and a picture a page. */
 export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
   return gridPages(tours, GRID[grid].cells, {
     listing: (t) => {

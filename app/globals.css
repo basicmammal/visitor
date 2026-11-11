@@ -217,7 +217,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-highlight-copy { font-size: 8.5pt; line-height: 1.15; column-count: 2; column-gap: 3.9mm; }
 .gp-highlight-copy p + p { margin-top: 1.5mm; }
 
-/* Walks and tours: one ruled column, poured page by page. */
+/* Tours and experiences: one ruled column, poured page by page. */
 .gp-flow, .gp-measure { font-size: 7pt; }
 .gp-measure { position: absolute; left: -9999px; top: 0; width: 94.9mm; font-family: var(--gp-cond); font-stretch: 87.5%; font-weight: 300; }
 .gp-key-heading { font-family: var(--gp-head); font-weight: 400; line-height: 1.1; font-size: 12pt; color: var(--gp-ink); margin-bottom: 1mm; }
@@ -292,3 +292,17 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gm-locator h3 { font-family: var(--gp-head); font-weight: 400; line-height: 1.1; font-size: 8pt; margin: 0; }
 .gm-locator .gm-col { width: 30mm; }
 @media print { .gm-missing { color: inherit; text-decoration: none; } }
+
+/*
+ * A preview: the section tabs across the top of the page instead of down
+ * its outer edge (Admin > Guide, Tabs: Across the top). The section's tab
+ * from the outer corner, the page marker beside it, both 5mm deep; the
+ * page key's icons move up the edge column into the space the tabs left.
+ */
+.gp-tabs-top .gp-tab { top: 0; height: 5mm; width: 36mm; padding: 0 2.5mm; justify-content: flex-start; }
+.gp-tabs-top .gp-page.gp-right .gp-tab { justify-content: flex-end; }
+.gp-tabs-top .gp-tab span { writing-mode: horizontal-tb; transform: none; font-size: 6pt; }
+.gp-tabs-top .gp-tab.gp-marker { top: 0; height: 5mm; width: 30mm; }
+.gp-tabs-top .gp-page.gp-left .gp-tab.gp-marker { left: 36mm; }
+.gp-tabs-top .gp-page.gp-right .gp-tab.gp-marker { right: 36mm; left: auto; }
+.gp-tabs-top .gp-key.gp-below-tab, .gp-tabs-top .gp-key.gp-below-marker { top: 12mm; }
