@@ -102,6 +102,13 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-grid.gp-grid6 { grid-template-rows: repeat(3, 46mm); }
 .gp-grid.gp-grid8 { grid-template-rows: repeat(4, 34mm); }
 .gp-grid.gp-grid16 { grid-template-rows: repeat(8, 16mm); }
+/* The grid of twelve (tours): six rows of 22mm, type between the eight's and the sixteen's, room for a sentence. */
+.gp-grid.gp-grid12 { grid-template-rows: repeat(6, 22mm); }
+.gp-grid12 .gp-event { font-size: 7.5pt; line-height: 1.08; }
+.gp-grid12 .gp-event-when, .gp-grid12 .gp-event-times { font-size: 7pt; }
+.gp-grid12 .gp-event-title { font-size: 8pt; margin: 0.1mm 0 0.2mm; }
+.gp-grid12 .gp-listing { padding-top: 1.2mm; }
+.gp-grid12 .gp-tour-meta { margin-top: 0.4mm; font-size: 6.5pt; }
 /*
  * The grid of sixteen's boxes are 16mm tall: smaller type, and only what
  * a reader needs there. An event keeps its dates, title, copy if it fits,
@@ -120,7 +127,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-grid16.gp-venue-grid .gp-venue { padding-top: 0.8mm; }
 .gp-grid16 .gp-tour-meta { margin-top: 0.3mm; font-size: 6.5pt; }
 .gp-image { margin: 0; }
-.gp-tour-grid .gp-listing { border-top-color: var(--gp-ink); }
+.gp-tour-grid .gp-listing { border-top-color: var(--gp-accent); }
 .gp-tour-grid .gp-event-title { color: var(--gp-accent); }
 /* Key icons: two at most on a listing, top right; the page's key runs down the 3.9mm edge column under the tabs, 4mm clear of the grid. */
 .gp-icons { float: right; display: inline-flex; gap: 0.8mm; margin: 0.2mm 0 0 1mm; color: var(--gp-ink80); }

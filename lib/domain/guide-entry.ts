@@ -234,8 +234,8 @@ export const LAYOUTS = ['top', 'grid6', 'grid8', 'grid16'] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
 
-/** Tours: in ruled columns, or on a grid of eight or sixteen with a picture a page. */
-export const TOUR_LAYOUTS = ['columns', 'grid8', 'grid16'] as const;
+/** Tours: in ruled columns, or on a grid of eight, twelve or sixteen with a picture a page. */
+export const TOUR_LAYOUTS = ['columns', 'grid8', 'grid12', 'grid16'] as const;
 export type TourLayout = (typeof TOUR_LAYOUTS)[number];
 /** A venue section: on the grid of eight (a listing a box, an eighth) or of sixteen (a listing a sixteenth). */
 export const VENUE_GRIDS = ['grid8', 'grid16'] as const;
@@ -297,7 +297,7 @@ const PICTURES_PER_PAGE = 2;
 const cut = (e: GuideEvent) => !e.fits.picture || e.fits.picture.endsWith('…');
 
 /** The grid's boxes: 142.4mm of page, rows 2mm apart. */
-export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 }, grid16: { cells: 16, height: 16 } } as const;
+export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 }, grid12: { cells: 12, height: 22 }, grid16: { cells: 16, height: 16 } } as const;
 
 /**
  * Events onto pages in date order, as the layout asks. Top: six at a
@@ -614,11 +614,11 @@ export function guideTour(
   };
 }
 
-/** A tour's box on the grid: when (or, on the on-demand pages, its genre), its title, the copy, then the provider's code and the duration. The code points to the key. */
+/** A tour's box on the grid: when (dated tours only: the on-demand pages say so on their marker), its title, the copy, then the provider's code and the duration. The code points to the key. */
 const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false });
-export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : t.genre || 'On demand');
+export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : '');
 
-/** Tours and experiences on the grid of eight, in the order they print: seven listings and a picture a page. */
+/** Tours and experiences on a grid (eight, twelve or sixteen), in the order they print: the listings and a picture a page. */
 export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
   return gridPages(tours, GRID[grid].cells, {
     listing: (t) => {

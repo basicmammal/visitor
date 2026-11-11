@@ -141,14 +141,20 @@ function ListingCell({ e }: { e: GuideEvent }) {
   );
 }
 
-/** A tour on the grid: when, or its genre on the on-demand pages; the title; the copy; the provider's code, found in the key, and the duration. */
+/** A tour on the grid: when (dated tours; the on-demand pages say so on their marker), the title, the times, the copy, and the provider's code, found in the key, and the duration. */
 function TourBox({ t }: { t: GuideTour }) {
   const { ref, copy, overset } = useFit(t.options.length ? t.options : [t.copy], false);
   if (t.frame === 'image') return <PictureBox e={t} />;
   return (
     <article ref={ref} className={`gp-event gp-listing gp-tour-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : t.provider}>
-      <p className="gp-event-when"><ListingIcons icons={iconsFor(t)} />{tourWhen(t)}</p>
-      <h4 className="gp-event-title">{t.title}</h4>
+      {tourWhen(t) ? (
+        <>
+          <p className="gp-event-when"><ListingIcons icons={iconsFor(t)} />{tourWhen(t)}</p>
+          <h4 className="gp-event-title">{t.title}</h4>
+        </>
+      ) : (
+        <h4 className="gp-event-title"><ListingIcons icons={iconsFor(t)} />{t.title}</h4>
+      )}
       {t.times && <p className="gp-event-times">{t.times}</p>}
       <p className="gp-event-copy">{copy}</p>
       <p className="gp-tour-meta">

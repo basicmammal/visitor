@@ -40,7 +40,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   };
   const with_ = (patch: Partial<GuideLayouts>) => href(window, draft, { ...layouts, ...patch });
   const eventLayouts = [['top', 'Pictures on top'], ['grid6', 'Grid of 6'], ['grid8', 'Grid of 8'], ['grid16', 'Grid of 16']] as const;
-  const tourLayouts = [['columns', 'Ruled columns'], ['grid8', 'Grid of 8'], ['grid16', 'Grid of 16']] as const;
+  const tourLayouts = [['columns', 'Ruled columns'], ['grid8', 'Grid of 8'], ['grid12', 'Grid of 12'], ['grid16', 'Grid of 16']] as const;
   const venueGrids = [['grid8', 'Grid of 8'], ['grid16', 'Grid of 16']] as const;
   const pill = (active: boolean) => `rounded-full border px-3 py-1 ${active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 hover:bg-stone-100'}`;
 
