@@ -576,7 +576,7 @@ export function GuideBook(props: {
         key: cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)),
         body: (
           <>
-            <div className={`gp-content gp-grid gp-${props.tourLayout} gp-tour-grid`}>
+            <div className={`gp-content gp-grid gp-${cells[0]?.grid ?? props.tourLayout} gp-tour-grid`}>
               {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
             </div>
             {providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate guide on index page {keyPage}</p>}

@@ -578,12 +578,17 @@ export type GuideTour = {
   options: string[];
   /** In the grid: a listing, or the picture box beside it. */
   frame: 'listing' | 'image';
+  /** Its provider has worked with us (their venue is a client): their tours keep the bigger boxes. Not printed. */
+  client: boolean;
+  /** The grid its page is on, once laid out. */
+  grid?: Exclude<TourLayout, 'columns'>;
 };
 
 export function guideTour(
   x: Experience,
   provider: Pick<Provider, 'name' | 'code'> | null,
   window?: Window,
+  client = false,
 ): GuideTour | null {
   const inside = x.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
   const dated = UNIQUE.includes(x.occurrence);
@@ -611,6 +616,7 @@ export function guideTour(
     guidePicture: x.guidePicture,
     options: copyOptions(x),
     frame: 'listing',
+    client,
   };
 }
 
@@ -618,13 +624,29 @@ export function guideTour(
 const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : '');
 
+/**
+ * The grid each group of tours is on. Dated tours and clients' on-demand
+ * tours take the grid chosen; the rest of the on-demand ones go twelve to
+ * a page when the choice is the grid of eight, so they keep a sentence each
+ * in less room. Each group starts a page of its own.
+ */
+export function tourGroups(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'>): GuideTour[][] {
+  const onDemand = tours.filter((t) => t.kind === 'on demand');
+  const others = grid === 'grid8' ? 'grid12' : grid;
+  return [
+    ...gridTours(tours.filter((t) => t.kind === 'dated'), grid),
+    ...gridTours(onDemand.filter((t) => t.client), grid),
+    ...gridTours(onDemand.filter((t) => !t.client), others),
+  ];
+}
+
 /** Tours and experiences on a grid (eight, twelve or sixteen), in the order they print: the listings and a picture a page. */
 export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
   return gridPages(tours, GRID[grid].cells, {
     listing: (t) => {
       const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
-      return { ...t, frame: 'listing', copy: t.options.find((c) => c.length <= room) ?? '' };
+      return { ...t, frame: 'listing', grid, copy: t.options.find((c) => c.length <= room) ?? '' };
     },
-    image: (t) => ({ ...t, frame: 'image', copy: '' }),
+    image: (t) => ({ ...t, frame: 'image', grid, copy: '' }),
   });
 }

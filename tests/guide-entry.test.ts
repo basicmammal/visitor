@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, Experience } from '@/lib/db/schema';
 import { toCsv, utf16le } from '@/lib/domain/csv';
-import { guideEvent, guideTour, layoutEvents, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
+import { guideEvent, guideTour, layoutEvents, tourGroups, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
 
 const base: Event = {
   id: 'e', slug: 'meet-albert', title: 'Meet Albert: The Retired Gunner',
@@ -198,5 +198,22 @@ describe('pictures in print', () => {
     expect(guideEvent({ ...base, headerImage: { ...photo, text: { found: true, url: photo.url, at: '2026-10-20' } } }, null)?.imageUrl).toBe('');
     // A check made for an earlier picture says nothing about this one.
     expect(guideEvent({ ...base, headerImage: { ...photo, text: { found: true, url: 'https://old/b.jpg', at: '2026-10-20' } } }, null)?.imageUrl).toBe(photo.url);
+  });
+});
+
+describe('tourGroups', () => {
+  const tour = (title: string, kind: GuideTour['kind'], client: boolean): GuideTour => ({
+    kind, genre: '', dates: kind === 'dated' ? '1 Dec' : '', title, code: 'AA', provider: 'A', duration: '', times: '', copy: '', sortKey: '',
+    imageUrl: '', preview: '', guidePicture: false, options: [], frame: 'listing', client,
+  });
+  const tours = [tour('Dated', 'dated', false), tour('Client walk', 'on demand', true), tour('Other walk', 'on demand', false)];
+
+  it('puts on-demand tours from non-clients twelve to a page when the choice is the grid of eight', () => {
+    const pages = tourGroups(tours, 'grid8');
+    expect(pages.map((p) => [p[0]!.title, p[0]!.grid])).toEqual([['Dated', 'grid8'], ['Client walk', 'grid8'], ['Other walk', 'grid12']]);
+  });
+
+  it('keeps every group on the grid chosen otherwise', () => {
+    expect(tourGroups(tours, 'grid16').map((p) => p[0]!.grid)).toEqual(['grid16', 'grid16', 'grid16']);
   });
 });

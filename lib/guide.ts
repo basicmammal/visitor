@@ -12,7 +12,7 @@ import {
   guideEvent,
   guideTour,
   guideVenue,
-  gridTours,
+  tourGroups,
   layoutEvents,
   printable,
   budgetFor,
@@ -128,9 +128,9 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   // Every provider in the key has a code, so a tour need only print its provider's code; a new one gets its initials until the import saves them.
   const missing = fillCodes([...new Map(tourRows.flatMap(({ provider }) => (provider ? [[provider.id, provider] as const] : []))).values()]);
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
-  for (const { experience, provider: found } of tourRows) {
+  for (const { experience, provider: found, client } of tourRows) {
     const provider = found && !found.code ? { ...found, code: missing.get(found.id) ?? null } : found;
-    const tour = guideTour(experience, provider, window);
+    const tour = guideTour(experience, provider, window, !!client);
     if (tour) printed.push({ tour, provider });
   }
   const tours = printed
@@ -179,9 +179,9 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   // In page order, as the sections print them.
   const venues = sections.flatMap((s) => [...s.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...s.directory]);
 
-  // On the grid, dated tours and on-demand ones each start a page of their own, under their own page marker.
+  // On the grid, dated tours, clients' on-demand tours and the rest each start a page of their own (tourGroups).
   const tg = layouts.tours;
-  const tourPages = tg === 'columns' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated'), tg), ...gridTours(tours.filter((t) => t.kind === 'on demand'), tg)];
+  const tourPages = tg === 'columns' ? null : tourGroups(tours, tg);
 
   // Looking ahead: the attractions closed for part of this edition, and the month each opens again.
   const edition = windowMonths(window.from, window.to);

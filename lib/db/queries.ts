@@ -169,9 +169,11 @@ export async function listExperiences(f: ExperienceFilter = {}) {
 
 export async function getExperience(slug: string) {
   const [row] = await db
-    .select({ experience: experiences, provider: providers })
+    .select({ experience: experiences, provider: providers, client: places.client })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
+    // A tour is a client's when its provider's venue is a client.
+    .leftJoin(places, eq(places.id, providers.placeId))
     .where(eq(experiences.slug, slug));
   return row ?? null;
 }
@@ -184,8 +186,10 @@ export async function listProviders() {
 
 export async function includedExperiences(opts: { draft?: boolean } = {}) {
   return db
-    .select({ experience: experiences, provider: providers })
+    .select({ experience: experiences, provider: providers, client: places.client })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
+    // A tour is a client's when its provider's venue is a client.
+    .leftJoin(places, eq(places.id, providers.placeId))
     .where(and(opts.draft ? ne(experiences.inclusion, 'excluded') : eq(experiences.inclusion, 'included'), eq(experiences.review, 'approved')));
 }
