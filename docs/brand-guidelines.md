@@ -83,6 +83,10 @@ with a rule in the category's colour. Credit: "Map data © OpenStreetMap contrib
 
 ## Layout and imagery
 
+- Section tabs run down the outer edge of the page, as in the 2026 editions (tabs across the top
+  were tried and not taken). Tabs, folios, chips and pictures have slightly rounded corners (1mm;
+  0.6mm on the chips); a tab's outer edge, at the trim, stays square.
+
 - Keep each page to a few things, with room around them; let headlines be large.
 - Photography shows the experience: close, bright, candid ("proximity over observation").
 - Illustration (Jersey's library) adds personality on openers and covers; never as icons for

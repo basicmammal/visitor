@@ -450,8 +450,6 @@ export function GuideBook(props: {
   /** Do's activities and providers' key, after Do's venue pages. */
   doSection?: DoSection | null;
   firstPage: number;
-  /** Where the section tabs sit: down the outer edge, as printed, or across the top (a preview). */
-  tabs?: 'side' | 'top';
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
 
@@ -654,7 +652,7 @@ export function GuideBook(props: {
   for (; k < numbered.length; k += 2) spreads.push([numbered[k]!, numbered[k + 1] ?? null]);
 
   return (
-    <div className={`gp-book${props.tabs === 'top' ? ' gp-tabs-top' : ''}`}>
+    <div className="gp-book">
       {measuring}
       {measuringDir}
       {measuringDo}

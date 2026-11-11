@@ -293,16 +293,13 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gm-locator .gm-col { width: 30mm; }
 @media print { .gm-missing { color: inherit; text-decoration: none; } }
 
+
 /*
- * A preview: the section tabs across the top of the page instead of down
- * its outer edge (Admin > Guide, Tabs: Across the top). The section's tab
- * from the outer corner, the page marker beside it, both 5mm deep; the
- * page key's icons move up the edge column into the space the tabs left.
+ * Softer corners, a little: the edge tabs and folios on their inner side
+ * (the outer edge is trimmed), the chips, and the pictures in the boxes.
  */
-.gp-tabs-top .gp-tab { top: 0; height: 5mm; width: 36mm; padding: 0 2.5mm; justify-content: flex-start; }
-.gp-tabs-top .gp-page.gp-right .gp-tab { justify-content: flex-end; }
-.gp-tabs-top .gp-tab span { writing-mode: horizontal-tb; transform: none; font-size: 6pt; }
-.gp-tabs-top .gp-tab.gp-marker { top: 0; height: 5mm; width: 30mm; }
-.gp-tabs-top .gp-page.gp-left .gp-tab.gp-marker { left: 36mm; }
-.gp-tabs-top .gp-page.gp-right .gp-tab.gp-marker { right: 36mm; left: auto; }
-.gp-tabs-top .gp-key.gp-below-tab, .gp-tabs-top .gp-key.gp-below-marker { top: 12mm; }
+.gp-book { --gp-round: 1mm; }
+.gp-tab.gp-left, .gp-folio.gp-left { border-radius: 0 var(--gp-round) var(--gp-round) 0; }
+.gp-tab.gp-right, .gp-folio.gp-right { border-radius: var(--gp-round) 0 0 var(--gp-round); }
+.gp-venue-tag, .gp-venue-label, .gp-caption { border-radius: 0.6mm; }
+.gp-event-image, .gp-venue-picture, .gp-image, .gp-highlight-image, .gp-new-thumb, .gp-ahead-thumb { border-radius: var(--gp-round); overflow: hidden; }
