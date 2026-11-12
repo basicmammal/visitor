@@ -69,6 +69,7 @@ light blue; green with dark green.
 | Eat | Green | White |
 | Do | Deep blue | White |
 | Buy | Maroon | White |
+| Pubs & bars (last; St Helier, East, West; grid of 16) | Blue | White |
 | Maps | Light blue | Deep blue |
 
 ## Maps

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
+import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueGridFor, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
   section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: '', ...o,
@@ -135,9 +135,12 @@ describe('Eat by area, as the last edition runs it', () => {
   });
 });
 
-describe('Out Out', () => {
-  it('prints as a section of its own after Eat', () => {
-    const out = venueSections([v('Bar', { section: 'Out Out', area: '' }), v('Cafe', { area: 'St Helier' }), v('Shop', { section: 'Buy', area: '' })]);
-    expect(out.map((s) => s.section)).toEqual(['Buy', 'Eat', 'Out Out']);
+describe('Pubs & bars', () => {
+  it('prints as a section of its own after Eat, on the grid of sixteen unless chosen', () => {
+    const out = venueSections([v('Bar', { section: 'Pubs & bars', area: 'West' }), v('Cafe', { area: 'St Helier' }), v('Shop', { section: 'Buy', area: '' })]);
+    expect(out.map((s) => s.section)).toEqual(['Buy', 'Eat', 'Pubs & bars']);
+    expect(venueGridFor({ venues: {} }, 'Pubs & bars')).toBe('grid16');
+    expect(venueGridFor({ venues: { 'Pubs & bars': 'grid8' } }, 'Pubs & bars')).toBe('grid8');
+    expect(venueGridFor({ venues: {} }, 'Eat')).toBe('grid8');
   });
 });

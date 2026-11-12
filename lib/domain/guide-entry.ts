@@ -294,7 +294,7 @@ export function layoutsQuery(l: GuideLayouts): string {
   if (l.events !== 'top') q.set('grid', l.events);
   if (l.tours !== 'grid8') q.set('tours', l.tours);
   if (l.ongoing !== defaultOngoing(l.tours)) q.set('ongoing', l.ongoing);
-  const venues = Object.entries(l.venues).filter(([, g]) => g !== 'grid8').map(([s, g]) => `${s}:${g}`).join(',');
+  const venues = Object.entries(l.venues).filter(([s, g]) => g !== (DEFAULT_VENUE_GRIDS[s] ?? 'grid8')).map(([s, g]) => `${s}:${g}`).join(',');
   if (venues) q.set('venues', venues);
   const budgets = Object.entries(l.budgets ?? {})
     .filter(([s, n]) => n !== (DEFAULT_BUDGETS[s] ?? null))
@@ -433,15 +433,17 @@ const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
   stay: 'Stay', 'eat-drink': 'Eat', see: 'See', do: 'Do', shop: 'Buy',
 };
 
-/** Eat's bars and clubs (area "Out Out") print as a section of their own at the end, as the Nightlife pages did. */
-export const OUT_OUT = 'Out Out';
+/** The pubs and bars: a section of their own at the end, as the Nightlife pages were. */
+export const PUBS_AND_BARS = 'Pubs & bars';
+/** What staff called Eat's bars and clubs before they had a section: a venue still set to it prints with the pubs and bars. */
+const OUT_OUT = 'Out Out';
 
 export function guideVenue(p: Place): GuideVenue {
   const options = copyOptions({ guideCopy: p.guideCopy, summary: p.summary, description: p.description });
   const section = p.guideSection ?? SECTION_OF_CATEGORY[p.category];
   const outOut = section === 'Eat' && sameName(p.guideArea ?? '') === sameName(OUT_OUT);
   return {
-    section: outOut ? OUT_OUT : section,
+    section: outOut ? PUBS_AND_BARS : section,
     area: outOut ? '' : p.guideArea ?? '',
     name: p.name,
     label: (p.guideLabel ?? '').toUpperCase(),
@@ -464,12 +466,15 @@ export function guideVenue(p: Place): GuideVenue {
 
 /**
  * The venue sections in the order the 2026 editions print them (Visit,
- * See, Do, Buy, Eat, then Out Out, the bars and clubs, as their Nightlife
- * pages), then any other section a venue is set to; areas
+ * See, Do, Buy, Eat, then Pubs & bars, as their Nightlife pages), then
+ * any other section a venue is set to; areas
  * in the order the guide reads the island (Do's by activity), then any
  * other, then those with no area.
  */
-export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat', 'Out Out'] as const;
+export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat', 'Pubs & bars'] as const;
+/** A section's grid unless chosen: the grid of eight, but sixteen for the pubs and bars, listings all. */
+export const DEFAULT_VENUE_GRIDS: Record<string, VenueGrid> = { [PUBS_AND_BARS]: 'grid16' };
+export const venueGridFor = (l: Pick<GuideLayouts, 'venues'>, section: string): VenueGrid => l.venues[section] ?? DEFAULT_VENUE_GRIDS[section] ?? 'grid8';
 /** Sections the print guide leaves out: places to stay are not in it. */
 export const UNPRINTED_SECTIONS = ['Stay'] as const;
 // Places as the 2026 editions run Eat (St Helier, then East, then West); Do is set by activity rather than by place, in their order too.

@@ -13,6 +13,7 @@ import {
   guideTour,
   guideVenue,
   tourGroups,
+  venueGridFor,
   UNPRINTED_SECTIONS,
   defaultOngoing,
   type TourLayout,
@@ -174,7 +175,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
       .filter((d) => !tourProviders.some((t) => t.code && t.code.toUpperCase() === d.code.toUpperCase()))
       .map((d) => ({ code: d.code, name: d.name, contact: d.phone, website: d.website })),
   ].sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
-  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue).filter((v) => !(UNPRINTED_SECTIONS as readonly string[]).includes(v.section)), (s) => layouts.venues[s] ?? 'grid8', (s) => budgetFor(layouts, s));
+  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue).filter((v) => !(UNPRINTED_SECTIONS as readonly string[]).includes(v.section)), (s) => venueGridFor(layouts, s), (s) => budgetFor(layouts, s));
   // Do prints even when every provider is in its index and no venue has a page of its own.
   if (doSet && !sections.some((s) => s.section === 'Do')) {
     const at = sections.findIndex((s) => VENUE_SECTION_ORDER.indexOf(s.section as never) > VENUE_SECTION_ORDER.indexOf('Do'));
