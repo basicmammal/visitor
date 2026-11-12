@@ -109,7 +109,7 @@ const genreOrder = (g: string) => {
  * tour in this edition.
  */
 export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout; layouts?: GuideLayouts } = {}): Promise<Guide> {
-  const fallbackTours: TourLayout = (opts.layout ?? 'top') === 'top' ? 'columns' : 'grid8';
+  const fallbackTours: TourLayout = 'grid8';
   const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: fallbackTours, ongoing: defaultOngoing(fallbackTours), venues: {}, budgets: {} };
   const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);

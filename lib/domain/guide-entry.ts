@@ -257,13 +257,13 @@ export const budgetFor = (l: GuideLayouts, section: string): number | null => (s
  * The template from the address: ?grid= for What's On (as it always was),
  * ?tours= for tours on specific dates, ?ongoing= for those on demand,
  * ?venues=Eat:grid16,Buy:grid16 for the venue sections not on the grid of
- * eight. Dated tours follow What's On onto the grid of eight unless chosen,
- * as they did; on-demand ones follow them, onto the grid of twelve.
+ * eight. Dated tours are on the grid of eight unless chosen; on-demand
+ * ones follow them onto a grid, the grid of twelve.
  */
 export function layoutsFrom(get: (key: string) => string | null | undefined): GuideLayouts {
   const events = layoutFrom(get('grid'));
   const asked = get('tours');
-  const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : events === 'top' ? 'columns' : 'grid8';
+  const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : 'grid8';
   const askedOngoing = get('ongoing');
   const ongoing: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(askedOngoing ?? '') ? (askedOngoing as TourLayout) : defaultOngoing(tours);
   const venues: Record<string, VenueGrid> = {};
@@ -287,7 +287,7 @@ export const defaultOngoing = (tours: TourLayout): TourLayout => (tours === 'col
 export function layoutsQuery(l: GuideLayouts): string {
   const q = new URLSearchParams();
   if (l.events !== 'top') q.set('grid', l.events);
-  if (l.tours !== (l.events === 'top' ? 'columns' : 'grid8')) q.set('tours', l.tours);
+  if (l.tours !== 'grid8') q.set('tours', l.tours);
   if (l.ongoing !== defaultOngoing(l.tours)) q.set('ongoing', l.ongoing);
   const venues = Object.entries(l.venues).filter(([, g]) => g !== 'grid8').map(([s, g]) => `${s}:${g}`).join(',');
   if (venues) q.set('venues', venues);

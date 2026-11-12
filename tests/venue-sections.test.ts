@@ -105,14 +105,15 @@ describe('the template in the address', () => {
   const read = (q: string) => layoutsFrom((k) => new URLSearchParams(q).get(k));
 
   it('chooses each part, defaulting as before', () => {
-    expect(read('')).toEqual({ events: 'top', tours: 'columns', ongoing: 'columns', venues: {}, budgets: {} });
+    expect(read('')).toEqual({ events: 'top', tours: 'grid8', ongoing: 'grid12', venues: {}, budgets: {} });
     expect(read('grid=grid8')).toEqual({ events: 'grid8', tours: 'grid8', ongoing: 'grid12', venues: {}, budgets: {} });
     expect(read('grid=grid8&tours=columns&ongoing=grid16')).toMatchObject({ tours: 'columns', ongoing: 'grid16' });
     expect(read('grid=grid16&tours=columns&venues=Eat:grid16,Buy:grid8,Nope:grid99&budget=Eat:all,Buy:1,See:x')).toEqual({ events: 'grid16', tours: 'columns', ongoing: 'columns', venues: { Eat: 'grid16', Buy: 'grid8' }, budgets: { Eat: null, Buy: 1 } });
   });
 
   it('writes back only what is not the default', () => {
-    expect(layoutsQuery({ events: 'top', tours: 'columns', ongoing: 'columns', venues: { Buy: 'grid8' }, budgets: { Eat: 2 } })).toBe('');
+    expect(layoutsQuery({ events: 'top', tours: 'grid8', ongoing: 'grid12', venues: { Buy: 'grid8' }, budgets: { Eat: 2 } })).toBe('');
+    expect(layoutsQuery({ events: 'top', tours: 'columns', ongoing: 'columns', venues: {}, budgets: {} })).toBe('tours=columns');
     const l = { events: 'grid8', tours: 'grid16', ongoing: 'grid8', venues: { Eat: 'grid16' }, budgets: { Eat: null, Buy: 3 } } as const;
     expect(read(layoutsQuery({ ...l, venues: { ...l.venues }, budgets: { ...l.budgets } }))).toEqual(l);
   });
