@@ -63,7 +63,8 @@ export type Window = { from: string; to: string };
  * 52mm cells with a 16mm picture, then four 45.5 × 43mm listings without.
  * The 2026 editions' 70mm picture cell is the default.
  */
-export type Frame = { height: number; picture: boolean };
+/** A box: its height in mm, whether it carries a picture, and its type size against the standard boxes' (the grid of twelve sets 7.5pt to their 8.5pt). */
+export type Frame = { height: number; picture: boolean; scale?: number };
 export const FRAMES = { picture: { height: 52, picture: true }, listing: { height: 43, picture: false } } as const satisfies Record<string, Frame>;
 
 /**
@@ -72,11 +73,15 @@ export const FRAMES = { picture: { height: 52, picture: true }, listing: { heigh
  * frame's width, a little short of the real figure so that what fits here
  * fits in InDesign too.
  */
-const LINE = { date: 3.6, title: 3.4, copy: 3.24, small: 2.75 };
+const LINE_MM = { date: 3.6, title: 3.4, copy: 3.24, small: 2.75 };
 const PER_LINE = { date: 30, title: 30, copy: 32, small: 40 };
 const lines = (text: string, per: number) => (text ? Math.ceil(text.length / per) : 0);
 
 export function copyBudget(e: { dates: string; times: string; title: string; price: string; venue: string; address: string; contact: string; website: string }, frame: Frame = { height: 70, picture: true }): number {
+  // Smaller type: more characters to a line, and lines closer together.
+  const k = frame.scale ?? 1;
+  const lines = (text: string, per: number) => (text ? Math.ceil(text.length / (per / k)) : 0);
+  const LINE = { date: LINE_MM.date * k, title: LINE_MM.title * k, copy: LINE_MM.copy * k, small: LINE_MM.small * k };
   const used =
     (frame.picture ? 18.7 : 2) + // the picture, its rule and the space under it; a listing's rule
     lines(`${e.dates}  ${e.times}`.trim(), PER_LINE.date) * LINE.date +
@@ -86,7 +91,7 @@ export function copyBudget(e: { dates: string; times: string; title: string; pri
     lines(e.contact, PER_LINE.small) * LINE.small +
     (e.website ? 1.4 + lines(e.website, PER_LINE.small) * LINE.small : 0);
   const copyLines = Math.max(0, Math.floor((frame.height - used) / LINE.copy));
-  return copyLines ? copyLines * PER_LINE.copy - (e.price ? e.price.length + 1 : 0) : 0;
+  return copyLines ? Math.floor((copyLines * PER_LINE.copy) / k) - (e.price ? e.price.length + 1 : 0) : 0;
 }
 
 /**
@@ -641,7 +646,9 @@ export function tourOptions(x: { guideCopy: string | null; summary: string | nul
 }
 
 /** A tour's box on the grid: when (dated tours only: the on-demand pages say so on their marker), its title, the copy, then the provider's code and the duration. The code points to the key. */
-const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false });
+/** The tour grids' type against the standard boxes' 8.5pt: twelve at 7.5pt, sixteen at 7pt (app/globals.css). */
+const TOUR_SCALE: Record<Exclude<TourLayout, 'columns'>, number> = { grid8: 1, grid12: 7.5 / 8.5, grid16: 7 / 8.5 };
+const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false, scale: TOUR_SCALE[grid] });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : '');
 
 /**
@@ -662,7 +669,9 @@ export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns
   return gridPages(tours, GRID[grid].cells, {
     listing: (t) => {
       const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
-      return { ...t, frame: 'listing', grid, copy: t.options.find((c) => c.length <= room) ?? '' };
+      // What fits by the estimate; failing that, the shortest sentence it has, so no tour goes without one (the proof measures and flags any overset).
+      const shortest = [...t.options].reverse().find(Boolean) ?? '';
+      return { ...t, frame: 'listing', grid, copy: t.options.find((c) => c && c.length <= room) ?? shortest };
     },
     image: (t) => ({ ...t, frame: 'image', grid, copy: '' }),
   });

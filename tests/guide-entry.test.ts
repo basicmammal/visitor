@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, Experience } from '@/lib/db/schema';
 import { toCsv, utf16le } from '@/lib/domain/csv';
-import { guideEvent, guideTour, layoutEvents, tourGroups, tourOptions, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
+import { guideEvent, guideTour, gridTours, layoutEvents, tourGroups, tourOptions, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
 
 const base: Event = {
   id: 'e', slug: 'meet-albert', title: 'Meet Albert: The Retired Gunner',
@@ -232,5 +232,18 @@ describe('tourOptions', () => {
 
   it('is the source sentence by sentence without a snippet', () => {
     expect(tourOptions({ ...words, printLine: null })).toEqual([words.summary, 'Climb, swing and zip through the trees on a course for all ages.', '']);
+  });
+});
+
+describe('gridTours copy for the export', () => {
+  it('gives a long-titled tour on the grid of twelve a sentence that fits, never none', () => {
+    const line = "A clue trail through St Helier's back streets hunting for a missing Millais portrait. Following in Bergerac's footsteps, it mixes local history, mystery and photo stops.";
+    const t: GuideTour = {
+      kind: 'on demand', genre: 'On foot', dates: '', title: 'Bergerac Tour: Mystery of The Missing Painting', code: 'JERS', provider: 'Jersey Uncovered', duration: '2-3 hrs', times: '', copy: '', sortKey: '',
+      imageUrl: '', preview: '', guidePicture: false, frame: 'listing', client: false,
+      options: tourOptions({ guideCopy: null, summary: "A three-hour clue trail through St. Helier's back streets in Bergerac's footsteps, hunting for the original of Millais's portrait of Lily Langtry.", description: null, printLine: line }),
+    };
+    const [page] = gridTours([t], 'grid12');
+    expect(page![0]!.copy).toBe("A clue trail through St Helier's back streets hunting for a missing Millais portrait.");
   });
 });
