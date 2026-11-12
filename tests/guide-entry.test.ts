@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, Experience } from '@/lib/db/schema';
 import { toCsv, utf16le } from '@/lib/domain/csv';
-import { guideEvent, guideTour, layoutEvents, tourGroups, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
+import { guideEvent, guideTour, layoutEvents, tourGroups, tourOptions, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
 
 const base: Event = {
   id: 'e', slug: 'meet-albert', title: 'Meet Albert: The Retired Gunner',
@@ -60,7 +60,7 @@ const tour: Experience = {
   duration: '1-2 hrs', tags: [], genre: 'Active', guidePicture: false,
   dates: ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29', '2026-10-06'].map((date) => ({ date, start: null, end: null })),
   occurrence: 'dates', fromPricePence: null, toPricePence: null, meetingPoint: null, parish: null,
-  phone: null, email: null, website: null, lat: null, lon: null, printDates: null, printTimes: null, highlight: false,
+  phone: null, email: null, website: null, lat: null, lon: null, printDates: null, printTimes: null, printLine: null, printLineKey: null, highlight: false,
   headerImage: null, gallery: [], sourceLink: null, businessId: null, review: 'approved', reviewNote: null, inclusion: 'included', inclusionNote: null, inclusionSetBy: null,
   inclusionSetAt: null, editedBy: null, editedAt: null, fieldSources: {}, lockedFields: [], sourceModifiedAt: null,
   createdAt: new Date(), updatedAt: new Date(),
@@ -216,5 +216,21 @@ describe('tourGroups', () => {
   it('leaves a kind in columns off the grid pages', () => {
     expect(tourGroups(tours, { tours: 'columns', ongoing: 'grid12' }).map((p) => p[0]!.title)).toEqual(['Client walk']);
     expect(tourGroups(tours, { tours: 'grid8', ongoing: 'columns' }).map((p) => p[0]!.title)).toEqual(['Dated']);
+  });
+});
+
+describe('tourOptions', () => {
+  const words = { guideCopy: null, summary: 'Climb, swing and zip through the trees on a course for all ages. Harnesses and helmets are provided, and instructors stay with you throughout the session.', description: null };
+
+  it('keeps the full copy first and adds the snippet, and its first sentence, for the smallest boxes', () => {
+    const options = tourOptions({ ...words, printLine: 'A ropes course high in the trees. Harnesses provided and instructors on hand.' });
+    expect(options[0]).toBe(words.summary);
+    expect(options).toContain('A ropes course high in the trees. Harnesses provided and instructors on hand.');
+    expect(options).toContain('A ropes course high in the trees.');
+    expect(options.at(-1)).toBe('');
+  });
+
+  it('is the source sentence by sentence without a snippet', () => {
+    expect(tourOptions({ ...words, printLine: null })).toEqual([words.summary, 'Climb, swing and zip through the trees on a course for all ages.', '']);
   });
 });

@@ -622,10 +622,22 @@ export function guideTour(
     imageUrl: printable(x.headerImage) ? x.headerImage!.url : '',
     preview: printable(x.headerImage) ? webImage(x.headerImage!, 520, 182) : '',
     guidePicture: x.guidePicture,
-    options: copyOptions(x),
+    options: tourOptions(x),
     frame: 'listing',
     client,
   };
+}
+
+/**
+ * A tour's copy, in the order a box tries it: ours and the source's, sentence by
+ * sentence, and then its snippet (two sentences, or the first alone) for
+ * the smallest boxes, so a tour that loses its longer copy keeps a sentence.
+ */
+export function tourOptions(x: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }): string[] {
+  const long = copyOptions({ ...x, printLine: null });
+  const short = x.printLine ? copyOptions({ guideCopy: null, summary: null, description: null, printLine: x.printLine }) : [];
+  // Ours stays first, as copyOptions keeps it; the snippet's forms come after the source's, shortest last.
+  return [...new Set([...long.filter(Boolean), ...short.filter(Boolean)]), ''];
 }
 
 /** A tour's box on the grid: when (dated tours only: the on-demand pages say so on their marker), its title, the copy, then the provider's code and the duration. The code points to the key. */

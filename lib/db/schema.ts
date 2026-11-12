@@ -432,6 +432,14 @@ export const experiences = pgTable('experiences', {
 
   printDates: text('print_dates'),
   printTimes: text('print_times'),
+  /**
+   * The guide's shortest copy for a small tour box (the grid of twelve):
+   * two sentences, the first able to stand alone. Written by Claude from the
+   * listing's words after each import, again when those words change
+   * (printLineKey), never once a person has set it (a locked field).
+   */
+  printLine: text('print_line'),
+  printLineKey: text('print_line_key'),
   highlight: boolean('highlight').notNull().default(false),
   /** The picture a page of the guide's tour grid shows beside this listing, chosen by staff ahead of the rest. Ours. */
   guidePicture: boolean('guide_picture').notNull().default(false),

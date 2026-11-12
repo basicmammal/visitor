@@ -18,9 +18,16 @@ export const PRINT_SNIPPET_MAX = 170;
 
 export type Wordy = { id: string; title: string; summary: string | null; description: string | null };
 
-const SYSTEM = `You write the shortest copy for Visitor Guide, Jersey's official printed visitor guide, in British English.
+/** What the snippet is written for: an event in What's On, or a tour or experience in its own section. */
+export type LineKind = 'event' | 'tour';
+const NOUN: Record<LineKind, { one: string; beside: string; tag: string }> = {
+  event: { one: 'event', beside: 'The title, date, time, price and venue are printed beside it', tag: 'event' },
+  tour: { one: 'tour or experience', beside: 'The title, the provider, the duration and any times are printed beside it', tag: 'tour' },
+};
 
-For each event, write a snippet of exactly two complete sentences that sums up what the listing says. The first sentence, at most ${PRINT_LINE_MAX} characters with spaces, says what the event is; it must make sense on its own, as it is sometimes printed alone. The second, which brings the whole snippet to at most ${PRINT_SNIPPET_MAX} characters, adds what to expect, who it suits or why to go. The title, date, time, price and venue are printed beside it, so do not repeat them and do not start with the event's name. Third person, plain and warm, not salesy: no exclamation marks, no capitals for emphasis, no superlatives the text cannot back up, no ellipses. Use only what the listing says. End each sentence with a full stop.`;
+const system = (kind: LineKind) => `You write the shortest copy for Visitor Guide, Jersey's official printed visitor guide, in British English.
+
+For each ${NOUN[kind].one}, write a snippet of exactly two complete sentences that sums up what the listing says. The first sentence, at most ${PRINT_LINE_MAX} characters with spaces, says what it is; it must make sense on its own, as it is sometimes printed alone. The second, which brings the whole snippet to at most ${PRINT_SNIPPET_MAX} characters, adds what to expect, who it suits or why to go. ${NOUN[kind].beside}, so do not repeat them and do not start with its name. Third person, plain and warm, not salesy: no exclamation marks, no capitals for emphasis, no superlatives the text cannot back up, no ellipses. Use only what the listing says. End each sentence with a full stop.`;
 
 const SCHEMA = {
   type: 'object',
@@ -46,7 +53,7 @@ const usable = (l: string) => l.length > 0 && l.length <= PRINT_SNIPPET_MAX + 15
 const BATCH = 20;
 let client: Anthropic | null = null;
 
-export async function printLines(items: Wordy[]): Promise<Map<string, string>> {
+export async function printLines(items: Wordy[], kind: LineKind = 'event'): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   if (!env.ANTHROPIC_API_KEY) return out;
   client ??= new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 120_000, maxRetries: 1 });
@@ -54,7 +61,7 @@ export async function printLines(items: Wordy[]): Promise<Map<string, string>> {
   for (let i = 0; i < items.length; i += BATCH) {
     const batch = items.slice(i, i + BATCH);
     const listings = batch
-      .map((e) => `<event id="${e.id}">\nTitle: ${e.title}\n${[e.summary, e.description].filter(Boolean).join('\n\n').slice(0, 3000)}\n</event>`)
+      .map((e) => `<${NOUN[kind].tag} id="${e.id}">\nTitle: ${e.title}\n${[e.summary, e.description].filter(Boolean).join('\n\n').slice(0, 3000)}\n</${NOUN[kind].tag}>`)
       .join('\n\n');
     try {
       const message = await client.beta.messages.create({
@@ -64,8 +71,8 @@ export async function printLines(items: Wordy[]): Promise<Map<string, string>> {
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
-        system: SYSTEM,
-        messages: [{ role: 'user', content: `A snippet for each of these ${batch.length} events, by id.\n\n${listings}` }],
+        system: system(kind),
+        messages: [{ role: 'user', content: `A snippet for each of these ${batch.length} ${kind === 'event' ? 'events' : 'tours and experiences'}, by id.\n\n${listings}` }],
       });
       if (message.stop_reason !== 'end_turn') {
         console.warn(`print lines stopped: ${message.stop_reason}`);

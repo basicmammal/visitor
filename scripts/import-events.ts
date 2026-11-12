@@ -4,7 +4,7 @@
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
  *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only),
- *                                          print-lines (the guide's snippets only), venue-lines (venues' one-liners only),
+ *                                          print-lines (the guide's snippets for events and tours only), venue-lines (venues' one-liners only),
  *                                          pictures (text check only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
@@ -47,7 +47,7 @@ import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, ty
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
-import { fillPrintLines } from '@/lib/integrations/claude/fill-print-lines';
+import { fillPrintLines, fillTourLines } from '@/lib/integrations/claude/fill-print-lines';
 import { fillVenueLines } from '@/lib/integrations/claude/fill-venue-lines';
 import { checkEventPictures } from '@/lib/integrations/claude/image-text';
 import { fillProviderCodes } from '@/lib/db/provider-codes';
@@ -462,6 +462,8 @@ if (!values.only || values.only === 'print-lines') {
   try {
     const lines = await fillPrintLines();
     console.log(`print lines: ${lines.written} of ${lines.wanted} written`);
+    const tourLines = await fillTourLines();
+    console.log(`tour print lines: ${tourLines.written} of ${tourLines.wanted} written`);
   } catch (e) {
     failed += 1;
     console.error(`print lines failed: ${(e as Error).message}`);
