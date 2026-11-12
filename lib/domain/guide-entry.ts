@@ -586,7 +586,7 @@ export type GuideTour = {
   options: string[];
   /** In the grid: a listing, or the picture box beside it. */
   frame: 'listing' | 'image';
-  /** Its provider has worked with us (their venue is a client): their tours keep the bigger boxes. Not printed. */
+  /** Its provider has worked with us (their venue is a client). Not printed. */
   client: boolean;
   /** The grid its page is on, once laid out. */
   grid?: Exclude<TourLayout, 'columns'>;
@@ -634,18 +634,14 @@ export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.k
 
 /**
  * The tours on grids, page by page, as the templates chosen for each kind
- * put them: dated ones on theirs, on-demand ones on theirs (a kind in
- * columns has no grid pages: it flows). On demand, clients' tours keep the
- * grid of eight when the rest are on a smaller grid, and come first. Each
- * group starts a page of its own.
+ * put them: dated ones on theirs, on-demand ones on theirs, in print order
+ * (a kind in columns has no grid pages: it flows). Each kind starts a page
+ * of its own.
  */
 export function tourGroups(tours: GuideTour[], layouts: Pick<GuideLayouts, 'tours' | 'ongoing'>): GuideTour[][] {
   const pages: GuideTour[][] = [];
   if (layouts.tours !== 'columns') pages.push(...gridTours(tours.filter((t) => t.kind === 'dated'), layouts.tours));
-  if (layouts.ongoing !== 'columns') {
-    const onDemand = tours.filter((t) => t.kind === 'on demand');
-    pages.push(...gridTours(onDemand.filter((t) => t.client), 'grid8'), ...gridTours(onDemand.filter((t) => !t.client), layouts.ongoing));
-  }
+  if (layouts.ongoing !== 'columns') pages.push(...gridTours(tours.filter((t) => t.kind === 'on demand'), layouts.ongoing));
   return pages;
 }
 

@@ -87,7 +87,6 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-24 text-xs text-stone-500">Tours: on demand</span>
             {tourLayouts.map(([g, label]) => <Link key={g} href={with_({ ongoing: g })} className={pill(layouts.ongoing === g)}>{label}</Link>)}
-            <span className="text-xs text-stone-500">Clients&apos; tours keep the grid of 8 on a smaller grid.</span>
           </div>
           {sections.map((s) => (
             <div key={s.section} className="flex flex-wrap items-center gap-2">
