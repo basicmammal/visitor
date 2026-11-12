@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categorise, withCategories } from '@/lib/domain/categorise';
+import { categorise, eveningAtBar, withCategories } from '@/lib/domain/categorise';
 
 const types = (title: string, summary?: string, source?: string) => categorise({ title, summary }, source).sort();
 
@@ -20,7 +20,7 @@ describe('categorise', () => {
   });
 
   it('files charity events, from their words or their source', () => {
-    expect(types('Trekker Fundraising Quiz', null as never, 'jersey-charities')).toEqual(['Charity']);
+    expect(types('Trekker Fundraising Quiz', null as never, 'jersey-charities')).toEqual(['Charity', 'Nightlife']);
     expect(types('BSK October Set Menu', null as never, 'jersey-charities')).toEqual(['Charity', 'Food & drink']);
     expect(types('Hospice Festive Market')).toEqual(['Charity', 'Markets & fairs', 'Seasonal']);
     expect(types("80's and 90's Disco Night", 'Join DJ Mel for a disco night, all proceeds to JCH')).toEqual(['Charity', 'Nightlife']);
@@ -47,7 +47,7 @@ describe('categorise', () => {
 
   it('is not fooled by Bat Out of Hell, a bar on the coast or Boxing Day', () => {
     expect(types('Bat Out of Hell 50th Anniversary Concert')).toEqual(['Music']);
-    expect(types('Live Music at Coast Bar & Bistro')).toEqual(['Music']);
+    expect(types('Live Music at Coast Bar & Bistro')).toEqual(['Music', 'Nightlife']);
     expect(types('Boxing Day Afternoon Tea')).toEqual(['Food & drink']);
     expect(types('Jersey Bulls FC Home Games')).toEqual(['Sports']);
   });
@@ -117,5 +117,25 @@ describe('kinds chosen together', () => {
     const { kindsHref } = await import('@/components/site/category-menu');
     expect(kindsHref('/whats-on', { q: 'jazz', type: 'Music' }, 'type', ['Music', 'Food & drink'])).toBe('/whats-on?q=jazz&type=Music%2CFood+%26+drink');
     expect(kindsHref('/whats-on', { q: 'jazz', type: 'Music' }, 'type', [])).toBe('/whats-on?q=jazz');
+  });
+});
+
+describe('Nightlife', () => {
+  it('finds a night out by its name', () => {
+    expect(types('Charity Quiz Night')).toContain('Nightlife');
+    expect(types('Live Music at Coast Bar & Bistro')).toContain('Nightlife');
+    expect(types('Christmas Cabaret Night for Wetwheels Jersey')).toContain('Nightlife');
+    expect(types('Sea Shanty Night at The Seaside Café')).toContain('Nightlife');
+  });
+
+  it('finds one by where and when: an evening at one of the pubs and bars', () => {
+    const at = (start: string | null, eventTypes: string[] = []) => ({ dates: [{ start }], eventTypes });
+    expect(eveningAtBar(at('21:30'), 'Pubs & bars')).toBe(true);
+    expect(eveningAtBar(at('19:00', ['Music']), 'Pubs & bars')).toBe(true);
+    expect(eveningAtBar(at('11:00', ['Food & drink']), 'Pubs & bars')).toBe(false);
+    expect(eveningAtBar(at('19:30', ['Outdoor', 'History & Heritage']), 'Pubs & bars')).toBe(false);
+    expect(eveningAtBar(at('19:00', ['Business & networking']), 'Pubs & bars')).toBe(false);
+    expect(eveningAtBar(at('20:00'), 'Eat')).toBe(false);
+    expect(eveningAtBar(at(null), 'Pubs & bars')).toBe(false);
   });
 });

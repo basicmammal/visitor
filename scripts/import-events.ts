@@ -5,7 +5,7 @@
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
  *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only),
  *                                          print-lines (the guide's snippets for events and tours only), venue-lines (venues' one-liners only),
- *                                          pictures (text check only)
+ *                                          pictures (text check only), nightlife (evening events at pubs and bars only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -31,10 +31,10 @@ import '@/lib/load-env';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { and, eq, inArray, ne, notInArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, ne, notInArray, sql } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, places, sourceRecords, type Event, type Place, type Review } from '@/lib/db/schema';
-import { withCategories } from '@/lib/domain/categorise';
+import { eveningAtBar, withCategories } from '@/lib/domain/categorise';
 import { findSameEvent } from '@/lib/domain/event-match';
 import { mergeFromSource } from '@/lib/domain/merge';
 import { normaliseName } from '@/lib/domain/same-place';
@@ -455,6 +455,23 @@ if (!values.only || values.only === 'codes') {
   } catch (e) {
     failed += 1;
     console.error(`provider codes failed: ${(e as Error).message}`);
+  }
+}
+// Nightlife by where and when: evening events at the guide's pubs and bars, from every source. Types a person set are left alone.
+if (!values.only || values.only === 'nightlife') {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = await db
+      .select({ id: events.id, dates: events.dates, eventTypes: events.eventTypes, section: places.guideSection })
+      .from(events)
+      .innerJoin(places, eq(places.id, events.placeId))
+      .where(and(gte(events.endsOn, today), eq(places.guideSection, 'Pubs & bars'), sql`not ('eventTypes' = any(${events.lockedFields}))`, sql`not ('Nightlife' = any(${events.eventTypes}))`));
+    const night = rows.filter((r) => eveningAtBar(r, r.section));
+    for (const r of night) await db.update(events).set({ eventTypes: [...r.eventTypes, 'Nightlife'] }).where(eq(events.id, r.id));
+    console.log(`nightlife: ${night.length} evening events at pubs and bars tagged`);
+  } catch (e) {
+    failed += 1;
+    console.error(`nightlife failed: ${(e as Error).message}`);
   }
 }
 // And the guide's one-line copy for whatever is new or has new words.

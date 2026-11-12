@@ -39,7 +39,7 @@ const RULES: Rule[] = [
   },
   {
     type: 'Nightlife',
-    title: /\b(club night|disco|rave|party|dj|karaoke|after dark|ibiza|bottomless|silent disco)\b/i,
+    title: /\b(club night|disco|rave|party|dj|karaoke|after dark|ibiza|bottomless|silent disco|quiz( night)?|comedy (night|club)|stand[- ]up night|cabaret|drag|open mic|live music|gig|bingo night|late[- ]night|nightclub|shanty night|tribute night|(70s|80s|90s|00s) night|cocktail night)\b/i,
   },
   {
     type: 'Sports',
@@ -122,4 +122,20 @@ export function categorise(e: { title: string; summary?: string | null; descript
 /** The source's own types first, then any these rules add. */
 export function withCategories(existing: readonly string[], e: Parameters<typeof categorise>[0], source?: string): string[] {
   return [...new Set([...existing, ...categorise(e, source)])];
+}
+
+/** What an event at a bar is not, for Nightlife: a walk that sets off from the pub, a talk, a class, work. */
+const NOT_A_NIGHT_OUT = ['Outdoor', 'Talks & learning', 'Business & networking', 'Professional & training', 'Health & wellbeing', 'Family friendly'];
+
+/**
+ * Nightlife by where and when, not by name: an evening event (from 6pm) at
+ * one of the guide's pubs and bars, unless it is a walk, a talk, a class or
+ * work that happens to start there. A band at The Sundown, a quiz at the
+ * Trafalgar, a DJ at Chambers.
+ */
+export function eveningAtBar(e: { dates: readonly { start: string | null }[]; eventTypes: readonly string[] }, venueSection: string | null | undefined): boolean {
+  if (venueSection !== 'Pubs & bars') return false;
+  if (e.eventTypes.some((t) => NOT_A_NIGHT_OUT.includes(t))) return false;
+  const start = e.dates.find((d) => d.start)?.start;
+  return !!start && start >= '18:00';
 }
