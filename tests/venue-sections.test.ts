@@ -128,9 +128,9 @@ describe('the template in the address', () => {
 });
 
 describe('Eat by area, as the last edition runs it', () => {
-  it('puts St Helier, then East, then West, however St Helier is written', () => {
-    const out = venueSections([v('W1', { area: 'West' }), v('E1', { area: 'East' }), v('H1', { area: 'St Helier' }), v('N1', { area: '' })]);
-    expect(out[0]!.key.map((k) => k.area)).toEqual(['St Helier', 'East', 'West']);
+  it('puts St Helier, then East, then West, and Out Out apart at the end, however St Helier is written', () => {
+    const out = venueSections([v('O1', { area: 'Out Out' }), v('W1', { area: 'West' }), v('E1', { area: 'East' }), v('H1', { area: 'St Helier' }), v('N1', { area: '' })]);
+    expect(out[0]!.key.map((k) => k.area)).toEqual(['St Helier', 'East', 'West', 'Out Out']);
     expect(out[0]!.key[0]!.code).toBe('SH');
   });
 });

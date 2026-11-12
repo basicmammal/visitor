@@ -464,8 +464,8 @@ export function guideVenue(p: Place): GuideVenue {
  * other, then those with no area.
  */
 export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
-// Places as the 2026 editions run Eat (St Helier, then East, then West); Do is set by activity rather than by place, in their order too.
-export const VENUE_AREA_ORDER = ['St Helier', 'East', 'Gorey', 'North', 'West', 'St Aubin', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'] as const;
+// Places as the 2026 editions run Eat (St Helier, then East, then West, and Out Out, its bars and clubs, apart at the end); Do is set by activity rather than by place, in their order too.
+export const VENUE_AREA_ORDER = ['St Helier', 'East', 'Gorey', 'North', 'West', 'St Aubin', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga', 'Out Out'] as const;
 const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'three-quarters': 1, half: 2, quarter: 3, listing: 4, directory: 5 };
 /** A name as staff may type it: "St. Helier" and "St Helier", "east" and "East", are one area. */
 const sameName = (v: string) => v.replace(/\./g, '').replace(/\s+/g, ' ').trim().toLowerCase();
