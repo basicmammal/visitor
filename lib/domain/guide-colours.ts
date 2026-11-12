@@ -32,6 +32,8 @@ export const SECTION_SWATCHES = {
   Do: PALETTE.deepBlue,
   Buy: PALETTE.maroon,
   Eat: PALETTE.green,
+  // The bars and clubs, last in the book: Visit's blue, at the far end from it.
+  'Out Out': PALETTE.blue,
 } as const satisfies Record<string, Swatch>;
 
 /** The pages that are not venue sections: What's On and New this season in orange, tours in dark green, the maps on light blue. */

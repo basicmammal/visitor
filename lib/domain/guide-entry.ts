@@ -433,11 +433,16 @@ const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
   stay: 'Stay', 'eat-drink': 'Eat', see: 'See', do: 'Do', shop: 'Buy',
 };
 
+/** Eat's bars and clubs (area "Out Out") print as a section of their own at the end, as the Nightlife pages did. */
+export const OUT_OUT = 'Out Out';
+
 export function guideVenue(p: Place): GuideVenue {
   const options = copyOptions({ guideCopy: p.guideCopy, summary: p.summary, description: p.description });
+  const section = p.guideSection ?? SECTION_OF_CATEGORY[p.category];
+  const outOut = section === 'Eat' && sameName(p.guideArea ?? '') === sameName(OUT_OUT);
   return {
-    section: p.guideSection ?? SECTION_OF_CATEGORY[p.category],
-    area: p.guideArea ?? '',
+    section: outOut ? OUT_OUT : section,
+    area: outOut ? '' : p.guideArea ?? '',
     name: p.name,
     label: (p.guideLabel ?? '').toUpperCase(),
     size: p.listingSize,
@@ -459,13 +464,16 @@ export function guideVenue(p: Place): GuideVenue {
 
 /**
  * The venue sections in the order the 2026 editions print them (Visit,
- * See, Do, Buy, Eat), then any other section a venue is set to; areas
+ * See, Do, Buy, Eat, then Out Out, the bars and clubs, as their Nightlife
+ * pages), then any other section a venue is set to; areas
  * in the order the guide reads the island (Do's by activity), then any
  * other, then those with no area.
  */
-export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
-// Places as the 2026 editions run Eat (St Helier, then East, then West, and Out Out, its bars and clubs, apart at the end); Do is set by activity rather than by place, in their order too.
-export const VENUE_AREA_ORDER = ['St Helier', 'East', 'Gorey', 'North', 'West', 'St Aubin', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga', 'Out Out'] as const;
+export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat', 'Out Out'] as const;
+/** Sections the print guide leaves out: places to stay are not in it. */
+export const UNPRINTED_SECTIONS = ['Stay'] as const;
+// Places as the 2026 editions run Eat (St Helier, then East, then West); Do is set by activity rather than by place, in their order too.
+export const VENUE_AREA_ORDER = ['St Helier', 'East', 'Gorey', 'North', 'West', 'St Aubin', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'] as const;
 const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'three-quarters': 1, half: 2, quarter: 3, listing: 4, directory: 5 };
 /** A name as staff may type it: "St. Helier" and "St Helier", "east" and "East", are one area. */
 const sameName = (v: string) => v.replace(/\./g, '').replace(/\s+/g, ' ').trim().toLowerCase();
