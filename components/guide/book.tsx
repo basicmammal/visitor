@@ -443,8 +443,8 @@ export function GuideBook(props: {
   tours: GuideTour[];
   /** On a grid, the tours a page at a time after the key; otherwise they flow. */
   tourGrid: GuideTour[][] | null;
-  /** Which grid the tours are on, when they are. */
-  tourLayout: TourLayout;
+  /** The templates for tours on specific dates (tours) and on demand (ongoing). */
+  tourLayouts: { tours: TourLayout; ongoing: TourLayout };
   providers: GuideProvider[];
   venues: GuideVenue[];
   /** The venue sections, laid out: pages per area, and the directory lines that follow them. */
@@ -459,7 +459,18 @@ export function GuideBook(props: {
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
 
-  // Tours and experiences flow: the key, then dated tours, then on-demand ones by genre.
+  // Tours and experiences: the key, then dated tours, then on-demand ones, each kind flowing in ruled columns or on its grid.
+  const datedFlows = props.tourLayouts.tours === 'columns';
+  const ongoingFlows = props.tourLayouts.ongoing === 'columns';
+  const onDemandItems = (): Flow[] => {
+    const items: Flow[] = [];
+    const genres = [...new Set(tours.filter((t) => t.kind === 'on demand').map((t) => t.genre || 'Other'))];
+    for (const g of genres) {
+      items.push({ key: `g-${g}`, heading: true, node: <TourHeading over="Tours & Experiences" title="On demand" rest={g.toLowerCase()} /> });
+      tours.filter((t) => t.kind === 'on demand' && (t.genre || 'Other') === g).forEach((t, i) => items.push({ key: `o-${g}-${i}-${t.title}`, node: <TourEntry t={t} /> }));
+    }
+    return items;
+  };
   const [flow] = useState<Flow[]>(() => {
     const items: Flow[] = [];
     if (providers.length) {
@@ -467,21 +478,21 @@ export function GuideBook(props: {
       providers.forEach((p) => items.push({ key: `p-${p.code}-${p.name}`, node: <ProviderRow p={p} /> }));
       items.push({ key: 'key-end', node: <div className="gp-break" /> });
     }
-    // On the grid, the tours have pages of their own after the key, and each box says when or what kind.
-    if (tourGrid) return items;
-    const dated = tours.filter((t) => t.kind === 'dated');
-    if (dated.length) {
-      items.push({ key: 'dated-h', heading: true, node: <TourHeading over="Tours & Experiences" title="On" rest="specific dates" /> });
-      dated.forEach((t, i) => items.push({ key: `d-${i}-${t.title}`, node: <TourEntry t={t} /> }));
-    }
-    const genres = [...new Set(tours.filter((t) => t.kind === 'on demand').map((t) => t.genre || 'Other'))];
-    for (const g of genres) {
-      items.push({ key: `g-${g}`, heading: true, node: <TourHeading over="Tours & Experiences" title="On demand" rest={g.toLowerCase()} /> });
-      tours.filter((t) => t.kind === 'on demand' && (t.genre || 'Other') === g).forEach((t, i) => items.push({ key: `o-${g}-${i}-${t.title}`, node: <TourEntry t={t} /> }));
+    if (datedFlows) {
+      const dated = tours.filter((t) => t.kind === 'dated');
+      if (dated.length) {
+        items.push({ key: 'dated-h', heading: true, node: <TourHeading over="Tours & Experiences" title="On" rest="specific dates" /> });
+        dated.forEach((t, i) => items.push({ key: `d-${i}-${t.title}`, node: <TourEntry t={t} /> }));
+      }
+      // With the dated ones in columns too, the on-demand ones run on after them.
+      if (ongoingFlows) items.push(...onDemandItems());
     }
     return items;
   });
   const [tourPages, measuring] = usePoured(flow);
+  // On demand in columns after dated tours on the grid: pages of their own, after the grid's.
+  const [ongoingFlow] = useState<Flow[]>(() => (ongoingFlows && !datedFlows ? onDemandItems() : []));
+  const [ongoingPages, measuringOngoing] = usePoured(ongoingFlow);
   // Each section's directory lines flow onto pages of their own, after its grid pages, by area.
   const [dirFlow] = useState<Flow[]>(() =>
     props.venueSections.filter((s) => s.directory.length).flatMap((s) => {
@@ -563,20 +574,33 @@ export function GuideBook(props: {
   // The key to every provider's marker, tours' and Do's, where the tours open; Do keeps a key of its own only when no tours print.
   let sharedKey: number | null = null;
   // Tours start on a left-hand page, as a section does in the guide.
-  if (tourPages && (tourPages.length || tourGrid?.length)) {
+  if (tourPages && ongoingPages && (tourPages.length || tourGrid?.length || ongoingPages.length)) {
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: EVENTS, body: <div className="gp-content" /> });
     for (const items of tourPages) pages.push({ section: TOURS, body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
     // The key opens the section: every tour page sends the reader back to it.
     const keyPage = props.firstPage + pages.length - tourPages.length;
     if (providers.length && tourPages.length) sharedKey = keyPage;
-    for (const cells of tourGrid ?? []) {
+    const grids = tourGrid ?? [];
+    const flowed = (kind: GuideTour['kind']) => (kind === 'dated' ? datedFlows : ongoingFlows);
+    // Dated grid pages, then on-demand ones in columns (when the dated were on the grid), then on-demand grid pages.
+    const ordered: ({ cells: GuideTour[] } | { flow: Flow[] })[] = [
+      ...grids.filter((c) => c[0]?.kind === 'dated' && !flowed('dated')).map((cells) => ({ cells })),
+      ...ongoingPages.map((flow) => ({ flow })),
+      ...grids.filter((c) => c[0]?.kind === 'on demand' && !flowed('on demand')).map((cells) => ({ cells })),
+    ];
+    for (const page of ordered) {
+      if ('flow' in page) {
+        pages.push({ section: TOURS, marker: 'On demand', body: <div className="gp-content gp-flow">{page.flow.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
+        continue;
+      }
+      const cells = page.cells;
       pages.push({
         section: TOURS,
         marker: cells[0]?.kind === 'dated' ? 'On specific dates' : 'On demand',
         key: cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)),
         body: (
           <>
-            <div className={`gp-content gp-grid gp-${cells[0]?.grid ?? props.tourLayout} gp-tour-grid`}>
+            <div className={`gp-content gp-grid gp-${cells[0]?.grid ?? 'grid8'} gp-tour-grid`}>
               {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
             </div>
             {providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate guide on index page {keyPage}</p>}
@@ -664,6 +688,7 @@ export function GuideBook(props: {
       {measuringDo}
       {measuringAhead}
       {measuringNew}
+      {measuringOngoing}
       {!tourPages && tours.length > 0 && <p className="no-print text-sm text-stone-500">Laying out the tours…</p>}
       {spreads.map((pair, i) => (
         <div key={i} className="gp-spread">

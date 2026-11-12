@@ -13,6 +13,8 @@ import {
   guideTour,
   guideVenue,
   tourGroups,
+  defaultOngoing,
+  type TourLayout,
   layoutEvents,
   printable,
   budgetFor,
@@ -107,7 +109,8 @@ const genreOrder = (g: string) => {
  * tour in this edition.
  */
 export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout; layouts?: GuideLayouts } = {}): Promise<Guide> {
-  const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: (opts.layout ?? 'top') === 'top' ? 'columns' : 'grid8', venues: {}, budgets: {} };
+  const fallbackTours: TourLayout = (opts.layout ?? 'top') === 'top' ? 'columns' : 'grid8';
+  const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: fallbackTours, ongoing: defaultOngoing(fallbackTours), venues: {}, budgets: {} };
   const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
@@ -179,9 +182,11 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   // In page order, as the sections print them.
   const venues = sections.flatMap((s) => [...s.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...s.directory]);
 
-  // On the grid, dated tours, clients' on-demand tours and the rest each start a page of their own (tourGroups).
-  const tg = layouts.tours;
-  const tourPages = tg === 'columns' ? null : tourGroups(tours, tg);
+  // Dated and on-demand tours each on their own template; on grids, each group starts a page of its own (tourGroups). Null: all in columns.
+  const tourPages = layouts.tours === 'columns' && layouts.ongoing === 'columns' ? null : tourGroups(tours, layouts);
+  // In print order: dated tours, then on-demand ones, each as its template lays them.
+  const gridded = (kind: GuideTour['kind']) => (kind === 'dated' ? layouts.tours : layouts.ongoing) !== 'columns';
+  const printOrder = (['dated', 'on demand'] as const).flatMap((kind) => (gridded(kind) ? (tourPages ?? []).flat().filter((t) => t.kind === kind) : tours.filter((t) => t.kind === kind)));
 
   // Looking ahead: the attractions closed for part of this edition, and the month each opens again.
   const edition = windowMonths(window.from, window.to);
@@ -217,7 +222,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     website: printWebsite(p.website)?.toLowerCase() ?? '',
   }));
 
-  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet, lookingAhead, newThisSeason };
+  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, tours: printOrder, tourPages, providers, venues, sections, doSection: doSet, lookingAhead, newThisSeason };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */

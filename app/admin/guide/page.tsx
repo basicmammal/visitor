@@ -81,8 +81,13 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
             {eventLayouts.map(([g, label]) => <Link key={g} href={with_({ events: g })} className={pill(layouts.events === g)}>{label}</Link>)}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="w-24 text-xs text-stone-500">Tours</span>
+            <span className="w-24 text-xs text-stone-500">Tours: dated</span>
             {tourLayouts.map(([g, label]) => <Link key={g} href={with_({ tours: g })} className={pill(layouts.tours === g)}>{label}</Link>)}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-24 text-xs text-stone-500">Tours: on demand</span>
+            {tourLayouts.map(([g, label]) => <Link key={g} href={with_({ ongoing: g })} className={pill(layouts.ongoing === g)}>{label}</Link>)}
+            <span className="text-xs text-stone-500">Clients&apos; tours keep the grid of 8 on a smaller grid.</span>
           </div>
           {sections.map((s) => (
             <div key={s.section} className="flex flex-wrap items-center gap-2">
@@ -136,7 +141,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayout={layouts.tours} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
 
     </>
   );

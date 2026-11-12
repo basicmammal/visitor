@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
   await requireStaff();
   const sp = request.nextUrl.searchParams;
   const window = windowFrom({ from: sp.get('from') ?? undefined, to: sp.get('to') ?? undefined });
-  const { tours, tourPages } = await buildGuide(window, { draft: isDraft(sp.get('draft')), layouts: layoutsFrom((k) => sp.get(k)) });
+  const { tours } = await buildGuide(window, { draft: isDraft(sp.get('draft')), layouts: layoutsFrom((k) => sp.get(k)) });
   // On the grid, the picture box is a row of its own: the picture, and the title of the listing it sits beside.
   const csv = toCsv(TOUR_COLUMNS, tours.map((t) => t.frame === 'image'
     ? [t.kind, t.genre, '', t.title, '', '', '', '', '', 'image', t.imageUrl, '']
-    : [t.kind, t.genre, t.dates, t.title, t.code, t.duration, t.times, t.copy, t.provider, tourPages ? 'listing' : '', '', iconsFor(t).map((i) => i.label).join(', ')]));
+    : [t.kind, t.genre, t.dates, t.title, t.code, t.duration, t.times, t.copy, t.provider, t.grid ? 'listing' : '', '', iconsFor(t).map((i) => i.label).join(', ')]));
   return new Response(utf16le(csv), {
     headers: { 'Content-Type': 'text/csv; charset=utf-16le', 'Content-Disposition': `attachment; filename="tours_${window.from}_${window.to}.csv"` },
   });

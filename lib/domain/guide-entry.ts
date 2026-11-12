@@ -243,7 +243,8 @@ export type VenueGrid = (typeof VENUE_GRIDS)[number];
 
 /** Each part of the guide's template, chosen on the production page and carried in its address. */
 /** Venue sections' grids, and how many pages each gives listings (those without booked space) before the rest go to its index. */
-export type GuideLayouts = { events: Layout; tours: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null> };
+/** `tours` is the template for tours on specific dates; `ongoing` for those on demand. */
+export type GuideLayouts = { events: Layout; tours: TourLayout; ongoing: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null> };
 
 /**
  * Pages for listings beyond the rows booked entries leave, then the section's index, unless chosen
@@ -254,14 +255,17 @@ export const budgetFor = (l: GuideLayouts, section: string): number | null => (s
 
 /**
  * The template from the address: ?grid= for What's On (as it always was),
- * ?tours= for tours, ?venues=Eat:grid16,Buy:grid16 for the venue sections
- * not on the grid of eight. Tours follow What's On onto the grid of eight
- * unless chosen, as they did.
+ * ?tours= for tours on specific dates, ?ongoing= for those on demand,
+ * ?venues=Eat:grid16,Buy:grid16 for the venue sections not on the grid of
+ * eight. Dated tours follow What's On onto the grid of eight unless chosen,
+ * as they did; on-demand ones follow them, onto the grid of twelve.
  */
 export function layoutsFrom(get: (key: string) => string | null | undefined): GuideLayouts {
   const events = layoutFrom(get('grid'));
   const asked = get('tours');
   const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : events === 'top' ? 'columns' : 'grid8';
+  const askedOngoing = get('ongoing');
+  const ongoing: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(askedOngoing ?? '') ? (askedOngoing as TourLayout) : defaultOngoing(tours);
   const venues: Record<string, VenueGrid> = {};
   for (const part of (get('venues') ?? '').split(',')) {
     const [section, grid] = part.split(':');
@@ -273,14 +277,18 @@ export function layoutsFrom(get: (key: string) => string | null | undefined): Gu
     if (section && n === 'all') budgets[section] = null;
     else if (section && /^\d{1,2}$/.test(n ?? '')) budgets[section] = Number(n);
   }
-  return { events, tours, venues, budgets };
+  return { events, tours, ongoing, venues, budgets };
 }
+
+/** On-demand tours, unless chosen: in columns with dated ones in columns, else on the grid of twelve. */
+export const defaultOngoing = (tours: TourLayout): TourLayout => (tours === 'columns' ? 'columns' : 'grid12');
 
 /** The template as address parameters, leaving out what is the default. */
 export function layoutsQuery(l: GuideLayouts): string {
   const q = new URLSearchParams();
   if (l.events !== 'top') q.set('grid', l.events);
   if (l.tours !== (l.events === 'top' ? 'columns' : 'grid8')) q.set('tours', l.tours);
+  if (l.ongoing !== defaultOngoing(l.tours)) q.set('ongoing', l.ongoing);
   const venues = Object.entries(l.venues).filter(([, g]) => g !== 'grid8').map(([s, g]) => `${s}:${g}`).join(',');
   if (venues) q.set('venues', venues);
   const budgets = Object.entries(l.budgets ?? {})
@@ -625,19 +633,20 @@ const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : '');
 
 /**
- * The grid each group of tours is on. Dated tours and clients' on-demand
- * tours take the grid chosen; the rest of the on-demand ones go twelve to
- * a page when the choice is the grid of eight, so they keep a sentence each
- * in less room. Each group starts a page of its own.
+ * The tours on grids, page by page, as the templates chosen for each kind
+ * put them: dated ones on theirs, on-demand ones on theirs (a kind in
+ * columns has no grid pages: it flows). On demand, clients' tours keep the
+ * grid of eight when the rest are on a smaller grid, and come first. Each
+ * group starts a page of its own.
  */
-export function tourGroups(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'>): GuideTour[][] {
-  const onDemand = tours.filter((t) => t.kind === 'on demand');
-  const others = grid === 'grid8' ? 'grid12' : grid;
-  return [
-    ...gridTours(tours.filter((t) => t.kind === 'dated'), grid),
-    ...gridTours(onDemand.filter((t) => t.client), grid),
-    ...gridTours(onDemand.filter((t) => !t.client), others),
-  ];
+export function tourGroups(tours: GuideTour[], layouts: Pick<GuideLayouts, 'tours' | 'ongoing'>): GuideTour[][] {
+  const pages: GuideTour[][] = [];
+  if (layouts.tours !== 'columns') pages.push(...gridTours(tours.filter((t) => t.kind === 'dated'), layouts.tours));
+  if (layouts.ongoing !== 'columns') {
+    const onDemand = tours.filter((t) => t.kind === 'on demand');
+    pages.push(...gridTours(onDemand.filter((t) => t.client), 'grid8'), ...gridTours(onDemand.filter((t) => !t.client), layouts.ongoing));
+  }
+  return pages;
 }
 
 /** Tours and experiences on a grid (eight, twelve or sixteen), in the order they print: the listings and a picture a page. */

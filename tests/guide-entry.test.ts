@@ -208,12 +208,14 @@ describe('tourGroups', () => {
   });
   const tours = [tour('Dated', 'dated', false), tour('Client walk', 'on demand', true), tour('Other walk', 'on demand', false)];
 
-  it('puts on-demand tours from non-clients twelve to a page when the choice is the grid of eight', () => {
-    const pages = tourGroups(tours, 'grid8');
+  it('lays dated and on-demand tours on their own templates, clients\' on-demand tours on the grid of eight', () => {
+    const pages = tourGroups(tours, { tours: 'grid8', ongoing: 'grid12' });
     expect(pages.map((p) => [p[0]!.title, p[0]!.grid])).toEqual([['Dated', 'grid8'], ['Client walk', 'grid8'], ['Other walk', 'grid12']]);
+    expect(tourGroups(tours, { tours: 'grid16', ongoing: 'grid16' }).map((p) => p[0]!.grid)).toEqual(['grid16', 'grid8', 'grid16']);
   });
 
-  it('keeps every group on the grid chosen otherwise', () => {
-    expect(tourGroups(tours, 'grid16').map((p) => p[0]!.grid)).toEqual(['grid16', 'grid16', 'grid16']);
+  it('leaves a kind in columns off the grid pages', () => {
+    expect(tourGroups(tours, { tours: 'columns', ongoing: 'grid12' }).map((p) => p[0]!.title)).toEqual(['Client walk', 'Other walk']);
+    expect(tourGroups(tours, { tours: 'grid8', ongoing: 'columns' }).map((p) => p[0]!.title)).toEqual(['Dated']);
   });
 });
