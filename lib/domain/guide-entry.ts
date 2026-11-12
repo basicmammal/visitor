@@ -464,11 +464,13 @@ export function guideVenue(p: Place): GuideVenue {
  * other, then those with no area.
  */
 export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
-// Do is set by activity rather than by place, in the order the 2026 editions run them.
-export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'] as const;
+// Places as the 2026 editions run Eat (St Helier, then East, then West); Do is set by activity rather than by place, in their order too.
+export const VENUE_AREA_ORDER = ['St Helier', 'East', 'Gorey', 'North', 'West', 'St Aubin', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'] as const;
 const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'three-quarters': 1, half: 2, quarter: 3, listing: 4, directory: 5 };
+/** A name as staff may type it: "St. Helier" and "St Helier", "east" and "East", are one area. */
+const sameName = (v: string) => v.replace(/\./g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 const ranked = (order: readonly string[], v: string) => {
-  const i = order.indexOf(v);
+  const i = order.findIndex((o) => sameName(o) === sameName(v));
   return i < 0 ? order.length + (v ? 0 : 1) : i;
 };
 
@@ -494,7 +496,8 @@ export function areaKey(areas: string[]): AreaKey[] {
   const taken = new Set<string>();
   return areas.filter(Boolean).map((area) => {
     const words = area.replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter((w) => w && !['the', 'and', 'of'].includes(w.toLowerCase()));
-    let code = AREA_CODES[area] ?? words.map((w) => w[0]!.toUpperCase()).join('');
+    const own = Object.entries(AREA_CODES).find(([name]) => sameName(name) === sameName(area))?.[1];
+    let code = own ?? words.map((w) => w[0]!.toUpperCase()).join('');
     const last = words.at(-1) ?? area;
     for (let i = 1; taken.has(code) && i < last.length; i++) code = code.slice(0, -1) + last.slice(0, i + 1).toUpperCase();
     while (taken.has(code)) code += '+';
