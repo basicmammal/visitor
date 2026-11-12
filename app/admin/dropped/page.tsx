@@ -35,6 +35,7 @@ export default async function Dropped({ searchParams }: { searchParams: SearchPa
     .from(listingDrops)
     .leftJoin(places, eq(places.id, listingDrops.placeId))
     .leftJoin(experiences, eq(experiences.id, listingDrops.experienceId))
+    .where(eq(listingDrops.source, 'visit_jersey'))
     .orderBy(desc(listingDrops.droppedAt));
   const shown = rows.filter((r) => withEvents || r.d.externalType !== 'events');
   const stillGone = shown.filter((r) => !r.d.returnedAt);

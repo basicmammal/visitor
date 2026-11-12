@@ -39,4 +39,4 @@ SELECT s."source", s."external_type", s."external_id",
   replace(replace(replace(replace(replace(replace(coalesce(s."payload"->'title'->>'rendered', s."payload"->>'title', s."payload"->>'name', s."external_id"),
     '&#038;', '&'), '&amp;', '&'), '&#8217;', '’'), '&#8216;', '‘'), '&#8211;', '–'), '&#8220;', '“'),
   s."payload"->>'link', s."place_id", s."experience_id", s."event_id", s."fetched_at" + interval '1 day', s."fetched_at"
-FROM "source_records" s WHERE NOT s."present";
+FROM "source_records" s WHERE NOT s."present" AND s."source" = 'visit_jersey';
