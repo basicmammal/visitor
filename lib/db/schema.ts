@@ -730,3 +730,32 @@ export const mapEntries = pgTable('map_entries', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 export type MapEntry = typeof mapEntries.$inferSelect;
+
+/**
+ * Listings a source stopped returning, kept for good: each time one drops
+ * off jersey.com it gets a row, with the day the import first missed it,
+ * and the day it came back if it does. What the import's present flag
+ * says only for now, this says over time.
+ */
+export const listingDrops = pgTable(
+  'listing_drops',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    source: text('source').notNull(),
+    externalType: text('external_type').notNull(),
+    externalId: text('external_id').notNull(),
+    /** The listing's name when it went, as the source had it. */
+    name: text('name').notNull(),
+    /** Its page on the source, as it was. */
+    link: text('link'),
+    placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
+    experienceId: uuid('experience_id').references(() => experiences.id, { onDelete: 'set null' }),
+    eventId: uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
+    /** The import that first missed it; it was last seen the run before. */
+    droppedAt: timestamp('dropped_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    returnedAt: timestamp('returned_at', { withTimezone: true }),
+  },
+  (t) => ({ bySource: index('listing_drops_source').on(t.source, t.externalType, t.externalId) }),
+);
+export type ListingDrop = typeof listingDrops.$inferSelect;

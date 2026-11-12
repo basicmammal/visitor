@@ -13,10 +13,11 @@
 import '@/lib/load-env';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { and, eq, notInArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
-import { events, experiences, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
+import { events, experiences, listingDrops, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
 import { normaliseName } from '@/lib/domain/same-place';
+import { decodeEntities } from '@/lib/integrations/jersey-com/parse';
 import { categorise } from '@/lib/domain/categorise';
 import { findSameEvent } from '@/lib/domain/event-match';
 import { mergeFromSource } from '@/lib/domain/merge';
@@ -287,16 +288,40 @@ async function importExperiences(raws: RawItem[], allPlaces: Place[]) {
   }
 }
 
-/** Records this run did not see are gone from the source. Kept, flagged. */
+/**
+ * Records this run did not see are gone from the source: kept, flagged,
+ * and logged once in listing_drops, the day they went. One that is back
+ * closes its open drop.
+ */
 async function markMissing(type: ListingType, seen: RawItem[]) {
   const ids = seen.map((r) => String(r.id));
   const where = and(eq(sourceRecords.source, SOURCE), eq(sourceRecords.externalType, type));
   const gone = await db
     .update(sourceRecords)
     .set({ present: false })
-    .where(ids.length ? and(where, notInArray(sourceRecords.externalId, ids)) : where)
-    .returning({ id: sourceRecords.id });
-  return gone.length;
+    .where(and(ids.length ? and(where, notInArray(sourceRecords.externalId, ids)) : where, eq(sourceRecords.present, true)))
+    .returning();
+  if (gone.length) {
+    await db.insert(listingDrops).values(
+      gone.map((r) => {
+        const p = r.payload as { title?: { rendered?: string } | string; name?: string; link?: string };
+        const title = typeof p.title === 'string' ? p.title : p.title?.rendered ?? p.name ?? r.externalId;
+        return {
+          source: SOURCE, externalType: type, externalId: r.externalId, name: decodeEntities(title), link: p.link ?? null,
+          placeId: r.placeId, experienceId: r.experienceId, eventId: r.eventId, lastSeenAt: r.fetchedAt,
+        };
+      }),
+    );
+  }
+  if (ids.length) {
+    await db
+      .update(listingDrops)
+      .set({ returnedAt: new Date() })
+      .where(and(eq(listingDrops.source, SOURCE), eq(listingDrops.externalType, type), inArray(listingDrops.externalId, ids), isNull(listingDrops.returnedAt)));
+  }
+  // Still gone, all of them: what the run's summary counts.
+  const [still] = await db.select({ n: sql<number>`count(*)` }).from(sourceRecords).where(and(where, eq(sourceRecords.present, false)));
+  return Number(still?.n ?? 0);
 }
 
 const allPlaces: Place[] = await db.select().from(places);

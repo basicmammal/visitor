@@ -246,6 +246,13 @@
       "when": 1794521235328,
       "tag": "0034_experience_print_line",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794523956575,
+      "tag": "0035_listing_drops",
+      "breakpoints": true
     }
   ]
 }
