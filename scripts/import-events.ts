@@ -43,7 +43,7 @@ import { matchVenue } from '@/lib/domain/venue-match';
 import { fixtureCopy } from '@/lib/integrations/claude/fixture';
 import { rewriteListing, type Rewrite } from '@/lib/integrations/claude/rewrite';
 import { BULLS_FIXTURES, JRFC_FIXTURES, isHome, parseBulls, parseJrfc, plainCopy, toEvent as fromFixture, type Fixture } from '@/lib/integrations/fixtures/parse';
-import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, type LdEvent } from '@/lib/integrations/eventbrite/parse';
+import { apiEventUrl, fromApi, type ApiEvent, ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, type LdEvent } from '@/lib/integrations/eventbrite/parse';
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
@@ -82,12 +82,23 @@ async function fetchText(url: string): Promise<string> {
 
 type Item = { v: VjEvent; raw: unknown };
 
+/** What a page calls itself, for a log line when it is not what we expected. */
+const pageTitle = (html: string) => (/<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1] ?? 'no title').trim().slice(0, 80);
+
 async function loadTicketsolve(feed: (typeof FEEDS)[number]): Promise<Item[]> {
   const xml = values.fixture ? readFileSync(values.fixture, 'utf8') : await fetchText(`https://${feed.host}/shows.xml`);
   return parseShows(xml, feed).map((v) => ({ v, raw: { feed: feed.host, show: v.externalId, title: v.title, dates: v.dates } }));
 }
 
 const PAGE_FRESH_DAYS = 7;
+
+/** One event from Eventbrite's API, in the shape its page gives. */
+async function apiEvent(id: string, token: string): Promise<LdEvent | null> {
+  const res = await fetch(apiEventUrl(id), { headers: { authorization: `Bearer ${token}`, 'user-agent': UA }, signal: AbortSignal.timeout(30_000) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API ${res.status} ${res.statusText}`);
+  return fromApi((await res.json()) as ApiEvent);
+}
 
 /**
  * Every Jersey listing page, then each event's own page for its times and
@@ -104,12 +115,20 @@ async function loadEventbrite(): Promise<Item[]> {
     const payload = r.payload as { page?: LdEvent | null; pageFetchedAt?: string | null };
     // Records from before pageFetchedAt was kept: the record's own time is when the page was read.
     if (payload?.page) kept.set(r.id, { page: payload.page, fetchedAt: payload.pageFetchedAt ? new Date(payload.pageFetchedAt) : r.fetchedAt });
+    // Asked for, and the page had no event in it: remembered too, or it is asked for again every run.
+    else if (payload?.pageFetchedAt) kept.set(r.id, { page: null, fetchedAt: new Date(payload.pageFetchedAt) });
   }
   const freshAfter = Date.now() - PAGE_FRESH_DAYS * 86_400_000;
+  // A page that came back without its event is tried again after a day, not a week.
+  const emptyFreshAfter = Date.now() - 86_400_000;
 
   const listed = new Map<string, LdEvent>();
   for (let page = 1; page <= 30; page += 1) {
-    const found = ldEvents(await fetchText(`https://www.eventbrite.co.uk/d/jersey/all-events/?page=${page}`));
+    const html = await fetchText(`https://www.eventbrite.co.uk/d/jersey/all-events/?page=${page}`);
+    const found = ldEvents(html);
+    // Page one with nothing on it is Eventbrite turning us away (or a new page design), not an island
+    // with no events: fail the source, so its events are not all marked gone.
+    if (!found.length && page === 1) throw new Error(`no events on the listing page ("${pageTitle(html)}", ${html.length} bytes): turned away, or the page has changed`);
     if (!found.length) break;
     for (const e of found) {
       const id = eventbriteId(e.url);
@@ -120,20 +139,30 @@ async function loadEventbrite(): Promise<Item[]> {
   }
   const out: Item[] = [];
   let fetched = 0;
+  let failedInARow = 0;
+  // With a token, each event's details come from the API: the event pages, the most of our requests, are left alone.
+  const token = process.env.EVENTBRITE_TOKEN?.trim() || null;
   for (const [id, listing] of listed) {
     const old = kept.get(id);
     let page = old?.page ?? null;
     let pageFetchedAt = old?.fetchedAt.toISOString() ?? null;
-    if (!old || old.fetchedAt.getTime() < freshAfter) {
+    const stale = !old || old.fetchedAt.getTime() < (old.page ? freshAfter : emptyFreshAfter);
+    // Several pages in a row refused: Eventbrite is turning us away. The rest wait for the next run.
+    if (stale && failedInARow < 5) {
       try {
-        page = ldEvents(await fetchText(listing.url!))[0] ?? null;
+        const got = token ? await apiEvent(id, token) : (ldEvents(await fetchText(listing.url!))[0] ?? null);
+        failedInARow = 0;
+        // A page without its event keeps the copy we had.
+        page = got ?? page;
         pageFetchedAt = new Date().toISOString();
       } catch (e) {
+        failedInARow += 1;
         console.warn(`\n${listing.url}: ${(e as Error).message}; using ${old ? 'our last copy' : 'the listing alone'}`);
+        if (failedInARow === 5) console.warn('\neventbrite: five event pages refused in a row; the rest wait for the next run');
       }
       fetched += 1;
       process.stdout.write(`\reventbrite event pages fetched: ${fetched}   `);
-      await pause(2000);
+      await pause(token ? 300 : 2000);
     }
     const v = fromEventbrite(listing, page);
     if (v) out.push({ v, raw: { listing, page, pageFetchedAt } });

@@ -10,7 +10,9 @@ import { decodeEntities } from '@/lib/integrations/jersey-com/parse';
  * schema.org Event data in each page's JSON-LD. The Jersey listing pages
  * give every event's name, day, venue, pin, image and summary; each
  * event's own page adds the times and the price. Eventbrite's search API
- * closed to the public in 2020, so this is the only way in.
+ * closed to the public in 2020, so the listing pages are the only way to
+ * find Jersey's events; with a token (EVENTBRITE_TOKEN), each event's
+ * details come from the API instead of its page (fromApi).
  *
  * Pure: fetching and pacing are the importer's.
  */
@@ -186,3 +188,76 @@ export function toEvent(listing: LdEvent, page: LdEvent | null): VjEvent | null 
     portalSyncedAt: null,
   };
 }
+
+/** Eventbrite's API (v3) event, with venue, organizer and ticket_availability expanded: the parts we read. */
+export type ApiEvent = {
+  id?: string;
+  name?: { text?: string | null };
+  summary?: string | null;
+  url?: string;
+  start?: { utc?: string; local?: string };
+  end?: { utc?: string; local?: string };
+  status?: string;
+  online_event?: boolean;
+  category_id?: string | null;
+  logo?: { url?: string | null; original?: { url?: string | null } | null } | null;
+  venue?: {
+    name?: string | null;
+    latitude?: string | null;
+    longitude?: string | null;
+    address?: { address_1?: string | null; address_2?: string | null; city?: string | null; region?: string | null; postal_code?: string | null; country?: string | null } | null;
+  } | null;
+  organizer?: { name?: string | null; url?: string | null } | null;
+  ticket_availability?: {
+    is_free?: boolean;
+    minimum_ticket_price?: { major_value?: string } | null;
+    maximum_ticket_price?: { major_value?: string } | null;
+  } | null;
+};
+
+/** Eventbrite's categories, as the schema.org types its pages give. */
+const CATEGORY_TYPE: Record<string, string> = {
+  '103': 'MusicEvent',
+  '105': 'TheaterEvent',
+  '110': 'FoodEvent',
+  '108': 'SportsEvent',
+};
+
+/** The API's event in the shape its page gives, so one reader serves both: an event's details without asking for its page. */
+export function fromApi(a: ApiEvent): LdEvent {
+  // What the API leaves empty is left out, so the listing's own value stands when the two are merged.
+  return Object.fromEntries(Object.entries(apiFields(a)).filter(([, x]) => x !== undefined)) as LdEvent;
+}
+
+function apiFields(a: ApiEvent): LdEvent {
+  const v = a.venue ?? null;
+  const t = a.ticket_availability ?? null;
+  const street = [v?.address?.address_1, v?.address?.address_2].filter(Boolean).join(', ') || undefined;
+  return {
+    '@type': (a.category_id && CATEGORY_TYPE[a.category_id]) || 'Event',
+    name: a.name?.text ?? undefined,
+    description: a.summary ?? undefined,
+    url: a.url,
+    image: a.logo?.original?.url ?? a.logo?.url ?? undefined,
+    startDate: a.start?.utc,
+    endDate: a.end?.utc,
+    eventStatus: a.status === 'canceled' ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+    eventAttendanceMode: a.online_event ? 'https://schema.org/OnlineEventAttendanceMode' : 'https://schema.org/OfflineEventAttendanceMode',
+    location: v
+      ? {
+          '@type': 'Place',
+          name: v.name ?? undefined,
+          geo: { latitude: v.latitude ?? undefined, longitude: v.longitude ?? undefined },
+          address: { streetAddress: street, addressLocality: v.address?.city ?? undefined, addressRegion: v.address?.region ?? undefined, postalCode: v.address?.postal_code ?? undefined, addressCountry: v.address?.country ?? undefined },
+        }
+      : undefined,
+    offers: t
+      ? t.is_free
+        ? { price: 0 }
+        : { lowPrice: t.minimum_ticket_price?.major_value, highPrice: t.maximum_ticket_price?.major_value }
+      : undefined,
+    organizer: a.organizer?.name ? { name: a.organizer.name, url: a.organizer.url ?? undefined } : undefined,
+  };
+}
+
+export const apiEventUrl = (id: string) => `https://www.eventbriteapi.com/v3/events/${id}/?expand=venue,organizer,ticket_availability`;
