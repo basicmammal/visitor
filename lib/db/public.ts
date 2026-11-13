@@ -1,7 +1,7 @@
 import { organiserKey } from '@/lib/domain/organiser';
 import { and, asc, eq, getTableColumns, ne, or, inArray, notInArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
 import { db } from './index';
-import { events, experiences, organiserProfiles, places, providers, type Category, type Event } from './schema';
+import { events, experiences, organiserProfiles, places, providers, sourceRecords, type Category, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { byWhen, nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
@@ -425,4 +425,21 @@ export async function publicSearch(words: string[], range: { from: string; to: s
     tours: tourRows.map((r) => ({ ...r, next: nextDate(r.tour.dates, today) ?? '9999' })),
     venues: venueRows,
   };
+}
+
+/**
+ * How many of the events on the site each source lists, from the cache:
+ * an event two sources list counts for both. For the banner of where the
+ * listings come from (lib/domain/listing-sources.ts).
+ */
+export function publicSourceCounts(): Promise<Map<string, number>> {
+  return cached('public:source-counts', LISTINGS_TTL_MS, async () => {
+    const rows = await db
+      .select({ source: sourceRecords.source, n: sql<number>`count(distinct ${events.id})::int` })
+      .from(sourceRecords)
+      .innerJoin(events, eq(events.id, sourceRecords.eventId))
+      .where(and(eq(sourceRecords.externalType, 'events'), eq(sourceRecords.present, true), ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)))
+      .groupBy(sourceRecords.source);
+    return new Map(rows.map((r) => [r.source, r.n]));
+  });
 }

@@ -16,6 +16,7 @@ import { many, one, type SearchParams } from '@/lib/params';
 import { JsonLd } from '@/components/site/json-ld';
 import { SITE } from '@/lib/agents/data';
 import { itemList } from '@/lib/agents/schema-org';
+import { SourceBanner } from '@/components/site/source-banner';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: "What's on", description: 'Events in Jersey: festivals, concerts, markets, shows and more.', alternates: alternates('/whats-on') };
@@ -114,6 +115,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
         </section>
       ))}
       <BrowseLinks months={months} />
+      <SourceBanner className="mt-12" />
     </ViewFrame>
   );
 }

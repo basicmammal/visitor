@@ -12,6 +12,7 @@ import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@
 import { printAddress, printPrice, printTimes, printWebsite, siteLabel } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { slugify } from '@/lib/domain/slug';
+import { listedBy } from '@/lib/domain/listed-by';
 import { cardWhen, headerWhen, upcomingDates, webTimes, webWhen } from '@/lib/domain/web-dates';
 import { JsonLd } from '@/components/site/json-ld';
 import { eventOut } from '@/lib/agents/data';
@@ -53,6 +54,7 @@ export default async function EventPage({ params }: Props) {
   // The organiser's own link from the feed. jersey.com's page about the listing is not one: it only sends people on again.
   const ownLink = (u: string | null) => (u && !/(^|\.)jersey\.com$/i.test(printWebsite(u) ?? '') ? u : null);
   const tickets = ownLink(e.website) ?? ownLink(e.sourceLink);
+  const listing = listedBy(e.sourceLink);
   const venueSite = venue?.website && venue.website !== e.website ? venue.website : null;
   const contact = e.phone
     ? <a href={`tel:${e.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{e.phone}</a>
@@ -105,6 +107,13 @@ export default async function EventPage({ params }: Props) {
               {e.organiser && (
                 <p className="mt-4 text-sm text-harbour/70">
                   Organised by <Link href={`/organisers/${slugify(e.organiser)}`} className="font-medium text-ink hover:text-brand">{e.organiser}</Link>
+                </p>
+              )}
+              {listing && (
+                <p className="mt-4 text-sm text-harbour/70">
+                  Listed by{' '}
+                  <a href={listing.href} target="_blank" rel="noopener" className="font-medium text-ink hover:text-brand">{listing.name} ↗</a>
+                  , {listing.blurb}
                 </p>
               )}
               {!e.businessId && <ClaimLink href={`/claim/events/${e.slug}`}>Organising this? Claim it</ClaimLink>}

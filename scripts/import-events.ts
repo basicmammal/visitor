@@ -3,7 +3,7 @@
  *
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
- *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only),
+ *                                          jersey-bulls, jersey-rfc, island-ticket-hut, gigzhub, stock (pictures only),
  *                                          print-lines (the guide's snippets for events and tours only), venue-lines (venues' one-liners only),
  *                                          pictures (text check only), nightlife (evening events at pubs and bars only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
@@ -54,6 +54,7 @@ import { fillProviderCodes } from '@/lib/db/provider-codes';
 import { matchGooglePlaces } from '@/lib/integrations/google/match';
 import { SITES as TRIBE_SITES, eventsUrl, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
 import { joinRuns } from '@/lib/domain/join-runs';
+import { WHATS_ON as GIGZHUB_WHATS_ON, parseGigs, toEvent as fromGig } from '@/lib/integrations/gigzhub/parse';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
 
 const { values } = parseArgs({ options: { only: { type: 'string' }, fixture: { type: 'string' } } });
@@ -243,6 +244,22 @@ async function loadFixtures(source: string, url: string, parse: (html: string) =
   return out;
 }
 
+/**
+ * Gigz Hub's coming gigs, from its What's On page. Bands and venues post
+ * them and Gigz Hub approves them, so they go on the site as they come.
+ * A page with no gigs at all means the site has changed under us.
+ */
+async function loadGigzhub(): Promise<Item[]> {
+  const gigs = parseGigs(values.fixture ? readFileSync(values.fixture, 'utf8') : await fetchText(GIGZHUB_WHATS_ON));
+  if (!gigs.length) throw new Error(`no gigs on ${GIGZHUB_WHATS_ON}: has the page changed?`);
+  return gigs.flatMap((g) => {
+    const v = fromGig(g);
+    // The poster's link expires within the week: the record keeps the gig, not the link.
+    const { id, venue, bandName, date, startTime, genre, price, ticketUrl, blurb, address } = g;
+    return v ? [{ v, raw: { gig: { id, venue, bandName, date, startTime, genre, price, ticketUrl, blurb, address } } }] : [];
+  });
+}
+
 const counts = { created: 0, linked: 0, updated: 0, unchanged: 0, rewritten: 0, joined: 0 };
 
 /** Which words a rewrite was made from: a new one only when these change. */
@@ -398,6 +415,8 @@ const SOURCES: { source: string; review: Review; load: () => Promise<Item[]>; vo
   ...FEEDS.map((feed) => ({ source: feed.source, review: 'approved' as const, load: () => loadTicketsolve(feed) })),
   { source: 'eventbrite', review: 'pending', load: loadEventbrite },
   { source: 'jersey-charities', review: 'pending', load: loadCharities },
+  // Live music in the pubs and bars, posted by the bands and venues and approved by Gigz Hub.
+  { source: 'gigzhub', review: 'approved', load: loadGigzhub },
   // Ticket sellers for anyone's night, courses and Guernsey's among them: review first.
   ...TRIBE_SITES.map((site) => ({ source: site.source, review: 'pending' as const, load: () => loadTribe(site) })),
   // The clubs' own fixtures: on the site as they come.
